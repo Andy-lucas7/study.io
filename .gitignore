@@ -45,3 +45,58 @@ app.*.map.json
 /android/app/release
 
 assets/audio/*.mp3
+
+# Flutter/Dart/Pub related
+.dart_tool/
+.packages
+.pub-cache/
+build/
+.melos_tool/
+
+# IDEs
+.idea/
+.vscode/
+*.iml
+
+# System files
+.DS_Store
+
+# Android
+.gradle/
+local.properties
+**/android/key.properties
+
+# iOS
+Pods/
+ios/Flutter/App.framework
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/.symlinks/
+ios/.flutter-plugins
+ios/.flutter-plugins-dependencies
+ios/Runner.xcworkspace
+Podfile.lock
+
+# Web (se aplicável)
+web/manifest.json
+web/favicon.png
+
+# Firebase configs (protege suas credenciais)
+**/google-services.json
+**/GoogleService-Info.plist
+
+# Env files
+.env
+.env.*
+
+# Logs & tmp
+*.log
+*.tmp
+*.bak
+*.swp
+*.lock
+
+# Misc
+.svn/
+.flutter-plugins
+.flutter-plugins-dependencies
