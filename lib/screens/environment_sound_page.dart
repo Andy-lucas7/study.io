@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../notifiers/environment_notifier.dart';
 import '../notifiers/theme_notifier.dart';
 import '../widgets/settings_drawer.dart';
-import '../constants.dart';
 
 class EnvironmentSoundPage extends StatefulWidget {
   const EnvironmentSoundPage({super.key});
@@ -72,12 +71,12 @@ class _EnvironmentSoundPageState extends State<EnvironmentSoundPage>
         blendMode: BlendMode.dstIn,
         shaderCallback: (bounds) => RadialGradient(
           center: Alignment.center,
-          radius: 0.7, // ⬅️ aumenta ou diminui o raio da vinheta
+          radius: 0.9, // ⬅️ aumenta ou diminui o raio da vinheta
           colors: [
             Colors.white,
             Colors.transparent,
           ],
-          stops: const [0.4, 1.0], // ⬅️ muda onde começa e termina o fade
+          stops: const [0.4, 5.0], // ⬅️ muda onde começa e termina o fade
         ).createShader(bounds),
         child: path.isNotEmpty
             ? Image.asset(

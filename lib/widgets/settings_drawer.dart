@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../notifiers/theme_notifier.dart';
 import '../notifiers/environment_notifier.dart';
+import '../screens/about_page.dart';
 
 class SettingsDrawer extends StatelessWidget {
   const SettingsDrawer({super.key});
@@ -33,6 +34,15 @@ class SettingsDrawer extends StatelessWidget {
         drawerBackground = null;
         break;
     }
+
+  Future<void> _goToAboutPage() async {
+
+      MaterialPageRoute(builder: (_) => const AboutPage());
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const AboutPage()),
+      );
+  }
 
     return Drawer(
       backgroundColor: isDarkMode
@@ -76,12 +86,13 @@ class SettingsDrawer extends StatelessWidget {
             ),
           ),
           ListTile(
+            onTap: _goToAboutPage, 
             leading: Icon(
               Icons.info,
               color: isDarkMode ? Colors.white : Colors.grey[600],
             ),
             title: Text(
-              'Sobre o App',
+              'Sobre o Study.io',
               style: TextStyle(color: isDarkMode ? Colors.white : Colors.black),
             ),
           ),

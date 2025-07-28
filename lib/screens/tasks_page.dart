@@ -15,12 +15,25 @@ class TasksPage extends StatefulWidget {
 class _TasksPageState extends State<TasksPage> {
   List<Task> _tasks = [];
   bool _showTodayOnly = true;
+  bool get wantkeepAlive => true;
+  bool _isActive = true;
 
   @override
   void initState() {
     super.initState();
-    _loadTasks();
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (_isActive) {
+        _loadTasks();
+      }
+    });
   }
+
+  @override
+  void dispose() {
+    _isActive = false;
+    super.dispose();
+  }
+
 
   String _getPriorityText(int value) {
     switch (value) {

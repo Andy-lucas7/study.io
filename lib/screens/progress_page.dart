@@ -81,11 +81,11 @@ class _ProgressPageState extends State<ProgressPage> {
 
   String _formatTime(int minutes) {
     if (minutes < 60) {
-      return '${minutes}min';
+      return '${minutes} min';
     } else {
       final hours = minutes ~/ 60;
       final remainingMinutes = minutes % 60;
-      return remainingMinutes > 0 ? '${hours}h ${remainingMinutes}min' : '${hours}h';
+      return remainingMinutes > 0 ? '${hours}h ${remainingMinutes} min' : '${hours}h';
     }
   }
 
@@ -120,14 +120,24 @@ class _ProgressPageState extends State<ProgressPage> {
               style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
-            Text('Tarefas concluídas: ${(_progressPercent * 100).toStringAsFixed(0)}%'),
-            const SizedBox(height: 8),
-            LinearProgressIndicator(
-              borderRadius: BorderRadius.circular(6),
-              value: _progressPercent,
-              minHeight: 18,
-              backgroundColor: currentTheme.colorScheme.primary.withAlpha(50),
-              color: currentTheme.colorScheme.primary,
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                LinearProgressIndicator(
+                  borderRadius: BorderRadius.circular(8),
+                  value: _progressPercent,
+                  minHeight: 24,
+                  backgroundColor: currentTheme.colorScheme.primary.withAlpha(50),
+                  color: currentTheme.colorScheme.primary,
+                ),
+                Text(
+                  '${(_progressPercent * 100).toStringAsFixed(0)}% Concluídos',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 30),
             Wrap(

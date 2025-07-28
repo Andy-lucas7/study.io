@@ -1,8 +1,10 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
-import '../constants.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../home_page.dart';
 
 class SplashPage extends StatefulWidget {
+  const SplashPage({super.key});
   @override
   State<SplashPage> createState() => _SplashPageState();
 }
@@ -16,35 +18,59 @@ class _SplashPageState extends State<SplashPage>
   late Offset _tapPosition;
   bool _showAnim = false;
 
+
+  final List<String> _backgroundImages = [
+    'assets/images/forest.png',
+    'assets/images/coffee.png',
+    'assets/images/rain.png',
+  ];
+
+  late String _selectedBackground;
+  bool _imagesPrecached = false;
+
   @override
   void initState() {
     super.initState();
 
+    _selectedBackground = _backgroundImages[Random().nextInt(_backgroundImages.length)];
+
     _controller = AnimationController(
-      duration: Duration(milliseconds: 1500),
+      duration: Duration(milliseconds: 3500),
       vsync: this,
     );
 
-    _circleAnim = Tween(begin: 0.0, end: 1.5).animate(
+    _circleAnim = Tween(begin: 0.0, end: 2.5).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeOut),
     );
 
-    _fadeAnim = Tween(begin: 1.0, end: 0.0).animate(
+    _fadeAnim = Tween(begin: 2.0, end: 0.0).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeOut),
     );
 
-    _slideAnim = Tween<Offset>(begin: Offset.zero, end: Offset(0, -0.5)).animate(
+    _slideAnim = Tween<Offset>(begin: Offset.zero, end: Offset(0, -1.5)).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeOut),
     );
 
     _controller.addStatusListener((status) {
-      if (status == AnimationStatus.completed) {
+      if (status == AnimationStatus.completed && mounted) {
         Navigator.pushReplacement(
           context,
           PageRouteBuilder(pageBuilder: (_, __, ___) => HomePage()),
         );
       }
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_imagesPrecached) {
+      for (var image in _backgroundImages) {
+        precacheImage(AssetImage(image), context);
+      }
+      precacheImage(const AssetImage('assets/icon/Icon.png'), context);
+      _imagesPrecached = true;
+    }
   }
 
   void _startAnim(Offset pos) {
@@ -64,11 +90,26 @@ class _SplashPageState extends State<SplashPage>
     final size = MediaQuery.of(context).size;
 
     return Scaffold(
-      backgroundColor: AppColors.inputBackground,
       body: Stack(
         children: [
+          Image.asset(
+            _selectedBackground,
+            fit: BoxFit.cover,
+            width: size.width,
+            height: size.height,
+          ),
           HomePage(),
-          if (!_showAnim) Container(color: AppColors.inputBackground),
+          if (!_showAnim)
+            Container(
+              decoration: BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage(_selectedBackground),
+                  fit: BoxFit.fill,
+                ),
+              ),
+              width: size.width,
+              height: size.height,
+            ),
           if (_showAnim)
             AnimatedBuilder(
               animation: _circleAnim,
@@ -76,26 +117,41 @@ class _SplashPageState extends State<SplashPage>
                 final r = _circleAnim.value * (size.width + size.height);
                 return ClipPath(
                   clipper: HoleClipper(center: _tapPosition, radius: r),
-                  child: Container(color: AppColors.inputBackground),
-                );
+                  child: Container(decoration: BoxDecoration(image: DecorationImage(image: AssetImage(_selectedBackground), fit: BoxFit.fill)),));
               },
             ),
           if (!_showAnim)
-            Center(
+            SizedBox(
+              height: 250,
+              width: double.infinity,
               child: SlideTransition(
-                position: _slideAnim,
-                child: FadeTransition(
-                  opacity: _fadeAnim,
-                  child: Text(
-                    'Study.io',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 36,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'Montserrat',
-                    ),
+              position: _slideAnim,
+              child: FadeTransition(
+                opacity: _fadeAnim,
+                child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisSize: MainAxisSize.max,
+                children: [
+                  Text(
+                  'Study',
+                  style: GoogleFonts.pacifico(
+                    color: Colors.white,
+                    fontSize: 78,
+                    fontWeight: FontWeight.bold,
                   ),
+                  ),
+                  Text(
+                  '.io',
+                  style: GoogleFonts.montserrat(
+                    color: Colors.white,
+                    fontSize: 62,
+                    fontWeight: FontWeight.w300,
+                  ),
+                  ),
+                ],
                 ),
+              ),
               ),
             ),
           if (!_showAnim)
@@ -105,7 +161,7 @@ class _SplashPageState extends State<SplashPage>
                 padding: const EdgeInsets.only(bottom: 100),
                 child: GestureDetector(
                   onTapDown: (d) => _startAnim(d.globalPosition),
-                  child: Icon(Icons.play_circle_fill, color: Colors.white, size: 100),
+                  child: Icon(Icons.play_circle_rounded, color: Colors.white, size: 100),
                 ),
               ),
             ),

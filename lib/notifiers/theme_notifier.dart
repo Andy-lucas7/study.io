@@ -3,7 +3,7 @@ import 'environment_notifier.dart';
 
 class ThemeNotifier extends ChangeNotifier {
   ThemeMode _themeMode = ThemeMode.dark;
-  late EnvironmentNotifier _environmentNotifier;
+  late final EnvironmentNotifier _environmentNotifier;
 
   ThemeNotifier(this._environmentNotifier) {
     _environmentNotifier.addListener(_updateThemes); // Atualiza temas quando o ambiente muda

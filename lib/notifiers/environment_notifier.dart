@@ -64,11 +64,11 @@ class EnvironmentNotifier extends ChangeNotifier {
   String get backgroundImagePath {
     switch (_environment) {
       case Environment.rain:
-        return 'assets/images/rain.jpg';
+        return 'assets/images/rain.png';
       case Environment.forest:
-        return 'assets/images/forest.jpg';
+        return 'assets/images/forest.png';
       case Environment.coffee:
-        return 'assets/images/coffee.jpg';
+        return 'assets/images/coffee.png';
       case Environment.mute:
         return '';
     }
