@@ -41,7 +41,7 @@ class EnvironmentNotifier extends ChangeNotifier {
       case Environment.mute:
         return ThemeData.dark().copyWith(
           scaffoldBackgroundColor: const Color.fromARGB(255, 40, 46, 52),
-          colorScheme: const ColorScheme.dark(primary: Colors.red, secondary: Color.fromARGB(255, 168, 41, 32), onPrimary: Color.fromARGB(255, 255, 95, 95)),
+          colorScheme: ColorScheme.dark(primary: Color.fromARGB(255, 28, 153, 151), secondary: Color.fromARGB(255, 10, 68, 67), onPrimary: Color.fromARGB(255, 119, 228, 226)),
         );
       case Environment.rain:
         return ThemeData.dark().copyWith(

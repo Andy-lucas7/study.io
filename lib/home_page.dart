@@ -74,8 +74,8 @@ class _HomePageState extends State<HomePage> {
         selectedItemColor: themeNotifier.themeMode == ThemeMode.light
             ? Colors.white
             : env.environment == Environment.coffee
-                ? currentTheme.colorScheme.onPrimary
-                : currentTheme.colorScheme.primary,
+            ? currentTheme.colorScheme.onPrimary
+            : currentTheme.colorScheme.primary,
         unselectedItemColor: themeNotifier.themeMode == ThemeMode.light
             ? currentTheme.colorScheme.secondary
             : Colors.white70,
@@ -89,7 +89,7 @@ class _HomePageState extends State<HomePage> {
             curve: Curves.ease,
           );
         },
-        type: BottomNavigationBarType.fixed,
+        type: BottomNavigationBarType.shifting,
         items: [
           BottomNavigationBarItem(
             icon: Icon(Icons.check_circle),

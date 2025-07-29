@@ -27,20 +27,20 @@ class Summary {
   });
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'title': title,
-        'description': description,
-        'content': content,
-        'createdAt': createdAt.toIso8601String(),
-      };
+    'id': id,
+    'title': title,
+    'description': description,
+    'content': content,
+    'createdAt': createdAt.toIso8601String(),
+  };
 
   factory Summary.fromJson(Map<String, dynamic> json) => Summary(
-        id: json['id'],
-        title: json['title'],
-        description: json['description'],
-        content: json['content'],
-        createdAt: DateTime.parse(json['createdAt']),
-      );
+    id: json['id'],
+    title: json['title'],
+    description: json['description'],
+    content: json['content'],
+    createdAt: DateTime.parse(json['createdAt']),
+  );
 }
 
 class SummaryPage extends StatefulWidget {
@@ -141,10 +141,18 @@ class _SummaryPageState extends State<SummaryPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Resumos'),
-        backgroundColor: themeNotifier.themeMode == ThemeMode.light
-            ? currentTheme.colorScheme.primary
-            : const Color.fromARGB(255, 4, 10, 14),
+        automaticallyImplyLeading: false,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+        title: Text(
+          'Resumos',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         leading: Builder(
           builder: (context) => IconButton(
             icon: const Icon(Icons.menu, color: Colors.white),
@@ -180,7 +188,8 @@ class _SummaryPageState extends State<SummaryPage> {
                       children: [
                         IconButton(
                           icon: const Icon(Icons.edit),
-                          onPressed: () => _showCreateEditDialog(summary: summary),
+                          onPressed: () =>
+                              _showCreateEditDialog(summary: summary),
                         ),
                         IconButton(
                           icon: const Icon(Icons.share),
@@ -197,7 +206,9 @@ class _SummaryPageState extends State<SummaryPage> {
                         context: context,
                         builder: (context) => AlertDialog(
                           title: Text(summary.title),
-                          content: SingleChildScrollView(child: Text(summary.content)),
+                          content: SingleChildScrollView(
+                            child: Text(summary.content),
+                          ),
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.pop(context),
@@ -228,11 +239,7 @@ class SummaryDialog extends StatefulWidget {
   final Summary? summary;
   final void Function(Summary) onSave;
 
-  const SummaryDialog({
-    super.key,
-    this.summary,
-    required this.onSave,
-  });
+  const SummaryDialog({super.key, this.summary, required this.onSave});
 
   @override
   State<SummaryDialog> createState() => _SummaryDialogState();
@@ -346,9 +353,13 @@ class _SummaryDialogState extends State<SummaryDialog> {
             ElevatedButton.icon(
               onPressed: _toggleRecording,
               style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    _isListening ? Colors.red : Theme.of(context).colorScheme.primary,
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                backgroundColor: _isListening
+                    ? Colors.red
+                    : Theme.of(context).colorScheme.primary,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 16,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(30),
                 ),
@@ -376,7 +387,10 @@ class _SummaryDialogState extends State<SummaryDialog> {
                 });
               },
               icon: const Icon(Icons.delete, color: Colors.red),
-              label: const Text('Apagar conteúdo', style: TextStyle(color: Colors.red)),
+              label: const Text(
+                'Apagar conteúdo',
+                style: TextStyle(color: Colors.red),
+              ),
             ),
           ],
         ),
@@ -394,9 +408,12 @@ class _SummaryDialogState extends State<SummaryDialog> {
         ),
         TextButton(
           onPressed: () {
-            if (_titleController.text.isEmpty || _contentController.text.isEmpty) {
+            if (_titleController.text.isEmpty ||
+                _contentController.text.isEmpty) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Título e conteúdo são obrigatórios')),
+                const SnackBar(
+                  content: Text('Título e conteúdo são obrigatórios'),
+                ),
               );
               return;
             }

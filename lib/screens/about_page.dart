@@ -138,6 +138,15 @@ class AboutPage extends StatelessWidget {
                 ),
 
                 const SizedBox(height: 34),
+                Text('Release 1.0.0',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.montserrat(
+                    color: Colors.white70,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+                const SizedBox(height: 3),
                 Text(
                   'Desenvolvido com carinho por Lucas Andrey',
                   textAlign: TextAlign.center,
