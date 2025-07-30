@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../notifiers/theme_notifier.dart';
+import 'dart:ui';
 import '../services/database_service.dart';
 import '../models/task.dart';
 import '../widgets/settings_drawer.dart';
@@ -219,26 +220,104 @@ class _PomodoroPageState extends State<PomodoroPage>
               children: [
                 SizedBox(
                   width: 200.0,
-                  child: DropdownButton<String>(
-                    isExpanded: true,
-                    value: _selectedSession,
-                    onChanged: _isRunning
-                        ? null
-                        : (value) {
-                            if (value != null) {
-                              setState(() {
-                                _selectedSession = value;
-                                _remaining = Duration.zero;
-                              });
-                            }
-                          },
-                    items: _focusDurations.keys.map((label) {
-                      return DropdownMenuItem(value: label, child: Text(label));
-                    }).toList(),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            alignment: AlignmentDirectional.center,
+                            borderRadius: BorderRadius.circular(16),
+                            isExpanded: true,
+                            dropdownColor: AppColors.tile.withOpacity(0.9),
+                            value: _selectedSession,
+                            icon: Icon(
+                              Icons.arrow_drop_down,
+                              color: Colors.white,
+                            ),
+                            style: TextStyle(color: Colors.white, fontSize: 16),
+                            onChanged: _isRunning
+                                ? null
+                                : (value) {
+                                    if (value != null) {
+                                      setState(() {
+                                        _selectedSession = value;
+                                        _remaining = Duration.zero;
+                                      });
+                                    }
+                                  },
+                            items: _focusDurations.keys.map((label) {
+                              return DropdownMenuItem(
+                                value: label,
+                                child: Text(label),
+                              );
+                            }).toList(),
+                            selectedItemBuilder: (BuildContext context) {
+                              return _focusDurations.keys.map((label) {
+                                String displayLabel;
+                                switch (label) {
+                                  case 'Iniciante 10 min | 5 min':
+                                    displayLabel = 'Iniciante';
+                                    break;
+                                  case 'Clássico 25 min | 5 min':
+                                    displayLabel = 'Clássico';
+                                    break;
+                                  case 'Produtivo 30 min | 10 min':
+                                    displayLabel = 'Produtivo';
+                                    break;
+                                  case 'Intermediário 1H | 15 min':
+                                    displayLabel = 'Intermediário';
+                                    break;
+                                  case 'Avançado 1H30 | 20 min':
+                                    displayLabel = 'Avançado';
+                                    break;
+                                  case 'Mestre do Foco 3H | 30 min':
+                                    displayLabel = 'Mestre do Foco';
+                                  default:
+                                    displayLabel = label;
+                                }
+
+                                return Text(
+                                  displayLabel,
+                                  style: TextStyle(color: Colors.white),
+                                );
+                              }).toList();
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ],
             ),
+            /*
+            ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    "Botão Blur",
+                    style: TextStyle(color: Colors.white, fontSize: 16),
+                  ),
+                ),
+              ),
+            ),*/
             const SizedBox(height: 20),
             Expanded(
               child: Column(
@@ -247,9 +326,7 @@ class _PomodoroPageState extends State<PomodoroPage>
                 children: [
                   Text(
                     _isFocus ? 'Modo: Foco' : 'Modo: Pausa',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: AppFonts().montserratTitle.copyWith(fontSize: 18),
                   ),
                   SizedBox(height: 22),
                   Stack(
