@@ -144,10 +144,7 @@ class _SummaryPageState extends State<SummaryPage> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
-        title: Text(
-          'Resumos',
-          style: AppFonts().montserratTitle.copyWith(),
-        ),
+        title: Text('Resumos', style: AppFonts().montserratTitle.copyWith()),
         leading: Builder(
           builder: (context) => IconButton(
             icon: Image.asset('assets/icon/Icon_fill.png'),
@@ -158,44 +155,15 @@ class _SummaryPageState extends State<SummaryPage> {
       drawer: const SettingsDrawer(),
       body: _summaries.isEmpty
           ? const Center(child: Text('Nenhum resumo criado ainda.'))
-          : ListView.builder(
+          : Padding(
               padding: const EdgeInsets.all(16),
-              itemCount: _summaries.length,
-              itemBuilder: (context, index) {
-                final summary = _summaries[index];
-                return Card(
-                  margin: const EdgeInsets.symmetric(vertical: 8),
-                  child: ListTile(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    tileColor: const Color.fromARGB(255, 35, 42, 56),
-                    title: Text(summary.title),
-                    subtitle: Text(
-                      summary.description.isEmpty
-                          ? 'Sem descrição'
-                          : summary.description,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.edit),
-                          onPressed: () =>
-                              _showCreateEditDialog(summary: summary),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.share),
-                          onPressed: () => _exportSummary(summary),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () => _deleteSummary(summary),
-                        ),
-                      ],
-                    ),
+              child: GridView.count(
+                crossAxisCount: 2,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                childAspectRatio: 0.85,
+                children: _summaries.map((summary) {
+                  return GestureDetector(
                     onTap: () {
                       showDialog(
                         context: context,
@@ -213,9 +181,71 @@ class _SummaryPageState extends State<SummaryPage> {
                         ),
                       );
                     },
-                  ),
-                );
-              },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: const Color.fromARGB(255, 35, 42, 56),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            summary.title,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            summary.description.isEmpty
+                                ? 'Sem descrição'
+                                : summary.description,
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 13,
+                            ),
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const Spacer(),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.edit,
+                                  color: Colors.white70,
+                                ),
+                                onPressed: () =>
+                                    _showCreateEditDialog(summary: summary),
+                              ),
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.share,
+                                  color: Colors.white70,
+                                ),
+                                onPressed: () => _exportSummary(summary),
+                              ),
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.delete,
+                                  color: Colors.redAccent,
+                                ),
+                                onPressed: () => _deleteSummary(summary),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
             ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showCreateEditDialog(),
@@ -225,10 +255,6 @@ class _SummaryPageState extends State<SummaryPage> {
     );
   }
 }
-
-// --------------------------------------------
-// Widget SummaryDialog para criar/editar resumo
-// --------------------------------------------
 
 class SummaryDialog extends StatefulWidget {
   final Summary? summary;

@@ -239,54 +239,60 @@ class _PomodoroPageState extends State<PomodoroPage>
                 ),
               ],
             ),
+            const SizedBox(height: 20),
             Expanded(
-              child: Center(
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    SizedBox(
-                      width: 250,
-                      height: 250,
-                      child: CircularProgressIndicator(
-                        value: _remaining == Duration.zero
-                            ? 0.0
-                            : _getProgress(),
-                        strokeWidth: 16,
-                        valueColor: AlwaysStoppedAnimation(
-                          currentTheme.colorScheme.primary,
-                        ),
-                        backgroundColor: Colors.grey.shade300,
-                        strokeCap:
-                            StrokeCap.round, // Deixa as pontas arredondadas
-                      ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    _isFocus ? 'Modo: Foco' : 'Modo: Pausa',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
                     ),
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          _isFocus ? 'FOCO' : 'PAUSA',
-                          style: Theme.of(context).textTheme.headlineSmall
-                              ?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 22),
+                  Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      SizedBox(
+                        width: 250,
+                        height: 250,
+                        child: CircularProgressIndicator(
+                          value: _remaining == Duration.zero
+                              ? 0.0
+                              : _getProgress(),
+                          strokeWidth: 16,
+                          valueColor: AlwaysStoppedAnimation(
+                            currentTheme.colorScheme.primary,
+                          ),
+                          backgroundColor: currentTheme.colorScheme.primary
+                              .withOpacity(0.1),
+                          strokeCap: StrokeCap.round,
                         ),
-                        const SizedBox(height: 10),
-                        Text(
-                          _formatDuration(_remaining),
-                          style: Theme.of(context).textTheme.displayMedium
-                              ?.copyWith(fontWeight: FontWeight.w600),
-                        ),
-                        ElevatedButton(
-                          onPressed: _selectTask,
-                          child: Text(
-                            _selectedTask?.title ?? 'Selecionar Tarefa',
-                            style: TextStyle(
-                              color: currentTheme.colorScheme.onPrimary,
+                      ),
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            _formatDuration(_remaining),
+                            style: Theme.of(context).textTheme.displayMedium
+                                ?.copyWith(fontWeight: FontWeight.w600),
+                          ),
+                          ElevatedButton(
+                            onPressed: _selectTask,
+                            child: Text(
+                              _selectedTask?.title ?? 'Selecionar Tarefa',
+                              style: TextStyle(
+                                color: currentTheme.colorScheme.onPrimary,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
             Row(
