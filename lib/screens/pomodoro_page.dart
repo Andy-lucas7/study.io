@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../notifiers/environment_notifier.dart';
 import '../notifiers/theme_notifier.dart';
 import '../services/database_service.dart';
 import '../models/task.dart';
 import '../widgets/settings_drawer.dart';
 import 'package:intl/intl.dart';
+import '../constants.dart';
 
 class PomodoroPage extends StatefulWidget {
   const PomodoroPage({super.key});
@@ -141,7 +141,6 @@ class _PomodoroPageState extends State<PomodoroPage>
         _isRunning = false;
       });
     } else {
-      // Se o tempo restante for zero, inicialize com o tempo da sessão
       if (_remaining == Duration.zero) {
         setState(() {
           _remaining = _isFocus
@@ -190,7 +189,6 @@ class _PomodoroPageState extends State<PomodoroPage>
 
   @override
   Widget build(BuildContext context) {
-    final env = context.watch<EnvironmentNotifier>();
     final themeNotifier = context.watch<ThemeNotifier>();
     final currentTheme = themeNotifier.themeMode == ThemeMode.light
         ? themeNotifier.lightTheme
@@ -198,13 +196,12 @@ class _PomodoroPageState extends State<PomodoroPage>
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Timer Pomodoro'),
-        backgroundColor: themeNotifier.themeMode == ThemeMode.light
-            ? currentTheme.colorScheme.primary
-            : const Color.fromARGB(255, 4, 10, 14),
+        title: Text('Timer Pomodoro', style: AppFonts().montserratTitle),
+        backgroundColor: Colors.transparent,
+        centerTitle: true,
         leading: Builder(
           builder: (context) => IconButton(
-            icon: const Icon(Icons.menu, color: Colors.white),
+            icon: Image.asset('assets/icon/Icon_fill.png'),
             onPressed: () => Scaffold.of(context).openDrawer(),
           ),
         ),

@@ -74,14 +74,14 @@ flutter:
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.
-flutter_icons:
+flutter_launcher_icons:
   android: true
   ios: true
   image_path: ./assets/icon/Icon.png
 
 flutter_native_splash:
   color: "#121212" # fundo escuro, ou troque pela cor que você quer
-  image: assets/icon/Icon.png # o ícone com o fundo já incluído
+  image_path: ./assets/icon/Icon.png # o ícone com o fundo já incluído
   android: true
   ios: true
   fullscreen: true

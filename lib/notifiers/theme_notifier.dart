@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:study_io/constants.dart';
 import 'environment_notifier.dart';
 
 class ThemeNotifier extends ChangeNotifier {
@@ -35,11 +36,17 @@ class ThemeNotifier extends ChangeNotifier {
 
   ThemeData get darkTheme {
     return _environmentNotifier.currentTheme.copyWith(
+      cardTheme: CardThemeData(
+        color:  AppColors.tile,
+      ),
       brightness: Brightness.dark,
-      scaffoldBackgroundColor: const Color.fromRGBO(6, 24, 34, 1),
+      scaffoldBackgroundColor: AppColors.background,
       colorScheme: _environmentNotifier.currentTheme.colorScheme.copyWith(brightness: Brightness.dark),
       appBarTheme: AppBarTheme(
         color: Colors.black,
+      ),
+      bottomAppBarTheme: BottomAppBarTheme(
+        color: AppColors.tile,
       ),
     );
   }

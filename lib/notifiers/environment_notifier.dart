@@ -40,22 +40,18 @@ class EnvironmentNotifier extends ChangeNotifier {
     switch (_environment) {
       case Environment.mute:
         return ThemeData.dark().copyWith(
-          scaffoldBackgroundColor: const Color.fromARGB(255, 40, 46, 52),
           colorScheme: ColorScheme.dark(primary: Color.fromARGB(255, 28, 153, 151), secondary: Color.fromARGB(255, 10, 68, 67), onPrimary: Color.fromARGB(255, 119, 228, 226)),
         );
       case Environment.rain:
         return ThemeData.dark().copyWith(
-          scaffoldBackgroundColor: const Color(0xFF0D1B2A),
           colorScheme: const ColorScheme.dark(primary: Color.fromARGB(255, 93, 128, 170), secondary: Color.fromARGB(255, 54, 81, 154), onPrimary: Color.fromARGB(255, 169, 202, 255)),
         );
       case Environment.forest:
         return ThemeData.dark().copyWith(
-          scaffoldBackgroundColor: const Color(0xFF0E1D18),
             colorScheme: const ColorScheme.dark(primary: Color.fromARGB(255, 76, 163, 70), secondary: Color.fromARGB(255, 35, 105, 30), onPrimary: Color.fromARGB(255, 80, 255, 94)),
         );
       case Environment.coffee:
         return ThemeData.dark().copyWith(
-          scaffoldBackgroundColor: const Color(0xFF2E1D1A),
           colorScheme: const ColorScheme.dark(primary: Color.fromARGB(255, 80, 55, 46), secondary: Color.fromARGB(255, 57, 40, 34), onPrimary: Color.fromARGB(255, 202, 167, 126)),
         );
     }

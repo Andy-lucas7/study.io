@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:study_io/constants.dart';
 import '../notifiers/theme_notifier.dart';
 import '../notifiers/environment_notifier.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../screens/about_page.dart';
 
 class SettingsDrawer extends StatelessWidget {
@@ -22,71 +24,85 @@ class SettingsDrawer extends StatelessWidget {
     String? drawerBackground;
     switch (env.environment) {
       case Environment.rain:
-        drawerBackground = 'assets/images/rain.jpg';
+        drawerBackground = 'assets/images/rain.png';
         break;
       case Environment.forest:
-        drawerBackground = 'assets/images/forest.jpg';
+        drawerBackground = 'assets/images/forest.png';
         break;
       case Environment.coffee:
-        drawerBackground = 'assets/images/coffee.jpg';
+        drawerBackground = 'assets/images/coffee.png';
         break;
       case Environment.mute:
-        drawerBackground = null;
+        drawerBackground = 'assets/icon/banner.png';
         break;
     }
 
-  Future<void> _goToAboutPage() async {
-
+    Future<void> _goToAboutPage() async {
       MaterialPageRoute(builder: (_) => const AboutPage());
       Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => const AboutPage()),
       );
-  }
+    }
 
     return Drawer(
       backgroundColor: isDarkMode
-          ? const Color.fromARGB(255, 1, 20, 31)
+          ? AppColors.background
           : const Color.fromARGB(255, 255, 255, 255),
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
-          DrawerHeader(
+          Container(
+            height: 230,
             decoration: BoxDecoration(
-              color: currentTheme.colorScheme.primary,
-              image: drawerBackground != null
-                  ? DecorationImage(
-                      image: AssetImage(drawerBackground),
-                      fit: BoxFit.cover,
-                    )
-                  : null,
+              image: DecorationImage(
+                image: AssetImage(drawerBackground),
+                fit: BoxFit.fill,
+              ),
             ),
-            child: const Text(
-              'Configurações',
-              style: TextStyle(color: Colors.white, fontSize: 24),
-            ),
-          ),
-          SwitchListTile(
-            title: Text(
-              'Tema Escuro',
-              style: TextStyle(color: isDarkMode ? Colors.white : Colors.black),
-            ),
-            secondary: Icon(
-              Icons.brightness_6,
-              color: isDarkMode ? Colors.white : Colors.grey[600],
-            ),
-            value: isDarkMode,
-            onChanged: (_) => themeNotifier.toggleTheme(),
-            inactiveThumbColor: const Color.fromARGB(255, 116, 116, 116),
-            inactiveTrackColor: const Color.fromARGB(255, 255, 255, 255),
-            trackOutlineColor: WidgetStateProperty.all(
-              isDarkMode
-                  ? const Color.fromARGB(255, 5, 0, 0)
-                  : const Color.fromARGB(255, 116, 116, 116),
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [Colors.transparent, AppColors.background],
+                      ),
+                    ),
+                  ),
+                ),
+                Align(
+                  alignment: Alignment.bottomRight,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Study',
+                          style: GoogleFonts.pacifico(
+                            color: Colors.white,
+                            fontSize: 50,
+                          ),
+                        ),
+                        Text(
+                          '.io',
+                          style: GoogleFonts.montserrat(
+                            color: Colors.white,
+                            fontSize: 50,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           ListTile(
-            onTap: _goToAboutPage, 
+            onTap: _goToAboutPage,
             leading: Icon(
               Icons.info,
               color: isDarkMode ? Colors.white : Colors.grey[600],

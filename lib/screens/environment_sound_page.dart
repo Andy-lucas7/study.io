@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../notifiers/environment_notifier.dart';
 import '../notifiers/theme_notifier.dart';
 import '../widgets/settings_drawer.dart';
+import '../constants.dart';
 
 class EnvironmentSoundPage extends StatefulWidget {
   const EnvironmentSoundPage({super.key});
@@ -93,22 +94,16 @@ class _EnvironmentSoundPageState extends State<EnvironmentSoundPage>
   @override
   Widget build(BuildContext context) {
     final env = context.watch<EnvironmentNotifier>();
-    final themeNotifier = context.watch<ThemeNotifier>();
-    final currentTheme = themeNotifier.themeMode == ThemeMode.light
-        ? themeNotifier.lightTheme
-        : themeNotifier.darkTheme;
-
     final newImagePath = env.backgroundImagePath;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Som Ambiente'),
-        backgroundColor: themeNotifier.themeMode == ThemeMode.light
-            ? currentTheme.colorScheme.primary
-            : const Color.fromARGB(255, 4, 10, 14),
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        title: Text('Som Ambiente', style: AppFonts().montserratTitle),
         leading: Builder(
           builder: (context) => IconButton(
-            icon: const Icon(Icons.menu, color: Colors.white),
+            icon: Image.asset('assets/icon/Icon_fill.png'),
             onPressed: () => Scaffold.of(context).openDrawer(),
           ),
         ),

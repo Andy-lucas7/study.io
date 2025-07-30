@@ -5,6 +5,7 @@ import '../notifiers/theme_notifier.dart';
 import '../services/database_service.dart';
 import '../models/task.dart';
 import '../widgets/settings_drawer.dart';
+import '../constants.dart';
 
 class ProgressPage extends StatefulWidget {
   const ProgressPage({super.key});
@@ -21,7 +22,15 @@ class _ProgressPageState extends State<ProgressPage> {
   int _todayMinutes = 0;
   int _weekMinutes = 0;
   List<int> _dailyMinutes = List.filled(7, 0);
-  final List<String> _weekDays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  final List<String> _weekDays = [
+    'Dom',
+    'Seg',
+    'Ter',
+    'Qua',
+    'Qui',
+    'Sex',
+    'Sáb',
+  ];
 
   @override
   void initState() {
@@ -36,7 +45,8 @@ class _ProgressPageState extends State<ProgressPage> {
     final startOfWeek = now.subtract(Duration(days: now.weekday % 7));
     final weekDates = List.generate(
       7,
-      (i) => DateFormat('yyyy-MM-dd').format(startOfWeek.add(Duration(days: i))),
+      (i) =>
+          DateFormat('yyyy-MM-dd').format(startOfWeek.add(Duration(days: i))),
     );
 
     final completedTasks = allTasks.where((task) => task.completed).toList();
@@ -61,7 +71,9 @@ class _ProgressPageState extends State<ProgressPage> {
 
     final List<int> dailyMinutes = List.filled(7, 0);
     for (int i = 0; i < 7; i++) {
-      final dayTasks = allTasks.where((task) => task.date == weekDates[i]).toList();
+      final dayTasks = allTasks
+          .where((task) => task.date == weekDates[i])
+          .toList();
       dailyMinutes[i] = dayTasks.fold<int>(
         0,
         (sum, task) => sum + (task.completed ? task.getStudyMinutes() : 0),
@@ -81,11 +93,13 @@ class _ProgressPageState extends State<ProgressPage> {
 
   String _formatTime(int minutes) {
     if (minutes < 60) {
-      return '${minutes} min';
+      return '$minutes min';
     } else {
       final hours = minutes ~/ 60;
       final remainingMinutes = minutes % 60;
-      return remainingMinutes > 0 ? '${hours}h ${remainingMinutes} min' : '${hours}h';
+      return remainingMinutes > 0
+          ? '${hours}h $remainingMinutes min'
+          : '${hours}h';
     }
   }
 
@@ -95,16 +109,14 @@ class _ProgressPageState extends State<ProgressPage> {
     final currentTheme = themeNotifier.themeMode == ThemeMode.light
         ? themeNotifier.lightTheme
         : themeNotifier.darkTheme;
-
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Progresso'),
-        backgroundColor: themeNotifier.themeMode == ThemeMode.light
-            ? currentTheme.colorScheme.primary
-            : const Color.fromARGB(255, 4, 10, 14),
+        title: Text('Progresso', style: AppFonts().montserratTitle),
+        backgroundColor: Colors.transparent,
+        centerTitle: true,
         leading: Builder(
           builder: (context) => IconButton(
-            icon: const Icon(Icons.menu, color: Colors.white),
+            icon: Image.asset('assets/icon/Icon_fill.png'),
             onPressed: () => Scaffold.of(context).openDrawer(),
           ),
         ),
@@ -127,7 +139,9 @@ class _ProgressPageState extends State<ProgressPage> {
                   borderRadius: BorderRadius.circular(8),
                   value: _progressPercent,
                   minHeight: 24,
-                  backgroundColor: currentTheme.colorScheme.primary.withAlpha(50),
+                  backgroundColor: currentTheme.colorScheme.primary.withAlpha(
+                    50,
+                  ),
                   color: currentTheme.colorScheme.primary,
                 ),
                 Text(
@@ -170,72 +184,64 @@ class _ProgressPageState extends State<ProgressPage> {
                 ),
               ],
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 24),
+            if (_totalTasks > 0)
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: currentTheme.colorScheme.primaryContainer.withOpacity(
+                    0.3,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      _tasksCompleted > 1
+                          ? 'Você já concluiu $_tasksCompleted tarefas no total!'
+                          : 'Você já concluiu $_tasksCompleted tarefa no total!',
+                      style: TextStyle(fontSize: 17),
+                    ),
+                  ],
+                ),
+              ),
+            const SizedBox(height: 16),
             const Text(
-              'Estudo por dia da semana',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              'Tempo de estudo por dia da semana',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             Container(
               height: 200,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: currentTheme.colorScheme.surface,
+                color: AppColors.tile,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: currentTheme.colorScheme.outline.withOpacity(0.2),
-                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.5),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: _buildBarChart(currentTheme),
             ),
             const SizedBox(height: 24),
-            if (_totalTasks > 0)
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: currentTheme.colorScheme.primaryContainer.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    Column(
-                      children: [
-                        Text(
-                          '${((_progressPercent) * 100).toStringAsFixed(1)}%',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: currentTheme.colorScheme.primary,
-                          ),
-                        ),
-                        const Text('Progresso'),
-                      ],
-                    ),
-                    Column(
-                      children: [
-                        Text(
-                          '${_totalTasks - _tasksCompleted}',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: currentTheme.colorScheme.error,
-                          ),
-                        ),
-                        const Text('Pendentes'),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            const SizedBox(height: 16),
             Center(
               child: ElevatedButton.icon(
                 onPressed: _loadData,
                 icon: const Icon(Icons.refresh),
                 label: const Text('Atualizar'),
                 style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                  backgroundColor: currentTheme.colorScheme.primaryContainer
+                      .withOpacity(0.3),
+                  foregroundColor: currentTheme.colorScheme.onPrimary,
                 ),
               ),
             ),
@@ -253,18 +259,14 @@ class _ProgressPageState extends State<ProgressPage> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            Icon(
-              icon,
-              size: 28,
-              color: theme.colorScheme.primary,
-            ),
+            Icon(icon, size: 28, color: theme.colorScheme.onPrimary),
             const SizedBox(height: 8),
             Text(
               value,
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: theme.colorScheme.primary,
+                color: Colors.white,
               ),
             ),
             const SizedBox(height: 4),
@@ -284,13 +286,17 @@ class _ProgressPageState extends State<ProgressPage> {
   Widget _buildBarChart(ThemeData theme) {
     final maxMinutes = _dailyMinutes.isEmpty
         ? 1
-        : (_dailyMinutes.reduce((a, b) => a > b ? a : b)).clamp(1, double.infinity);
+        : (_dailyMinutes.reduce(
+            (a, b) => a > b ? a : b,
+          )).clamp(1, double.infinity);
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       crossAxisAlignment: CrossAxisAlignment.end,
       children: List.generate(7, (i) {
-        final barHeight = maxMinutes > 0 ? (_dailyMinutes[i] / maxMinutes) * 140 : 0.0;
+        final barHeight = maxMinutes > 0
+            ? (_dailyMinutes[i] / maxMinutes) * 140
+            : 0.0;
         final isToday = DateTime.now().weekday % 7 == i;
         return Column(
           mainAxisAlignment: MainAxisAlignment.end,

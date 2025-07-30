@@ -1,15 +1,14 @@
 import 'dart:io';
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:share_plus/share_plus.dart';
-
 import '../notifiers/theme_notifier.dart';
 import '../widgets/settings_drawer.dart';
+import 'package:study_io/constants.dart';
 
 class Summary {
   String id;
@@ -147,15 +146,11 @@ class _SummaryPageState extends State<SummaryPage> {
         centerTitle: true,
         title: Text(
           'Resumos',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-          ),
+          style: AppFonts().montserratTitle.copyWith(),
         ),
         leading: Builder(
           builder: (context) => IconButton(
-            icon: const Icon(Icons.menu, color: Colors.white),
+            icon: Image.asset('assets/icon/Icon_fill.png'),
             onPressed: () => Scaffold.of(context).openDrawer(),
           ),
         ),

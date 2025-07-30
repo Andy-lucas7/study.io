@@ -4,6 +4,7 @@ import '../models/task.dart';
 import 'new_task_page.dart';
 import '../services/database_service.dart';
 import '../widgets/settings_drawer.dart';
+import '../constants.dart';
 
 class TasksPage extends StatefulWidget {
   const TasksPage({super.key});
@@ -34,7 +35,6 @@ class _TasksPageState extends State<TasksPage> {
     super.dispose();
   }
 
-
   String _getPriorityText(int value) {
     switch (value) {
       case 0:
@@ -51,8 +51,12 @@ class _TasksPageState extends State<TasksPage> {
   Future<void> _loadTasks() async {
     final now = DateTime.now();
     final today = DateFormat('yyyy-MM-dd').format(now);
-    final startOfWeek = DateFormat('yyyy-MM-dd').format(now.subtract(Duration(days: now.weekday - 1)));
-    final endOfWeek = DateFormat('yyyy-MM-dd').format(now.add(Duration(days: 7 - now.weekday)));
+    final startOfWeek = DateFormat(
+      'yyyy-MM-dd',
+    ).format(now.subtract(Duration(days: now.weekday - 1)));
+    final endOfWeek = DateFormat(
+      'yyyy-MM-dd',
+    ).format(now.add(Duration(days: 7 - now.weekday)));
 
     final tasks = _showTodayOnly
         ? await DatabaseService.getTasksByDate(today)
@@ -95,10 +99,15 @@ class _TasksPageState extends State<TasksPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Tarefas ${_showTodayOnly ? 'do dia' : 'da Semana'}'),
+        backgroundColor: Colors.transparent,
+        centerTitle: true,
+        title: Text(
+          'Tarefas ${_showTodayOnly ? 'do dia' : 'da Semana'}',
+          style: AppFonts().montserratTitle,
+        ),
         leading: Builder(
           builder: (context) => IconButton(
-            icon: const Icon(Icons.menu, color: Colors.white),
+            icon: Image.asset('assets/icon/Icon_fill.png'),
             onPressed: () => Scaffold.of(context).openDrawer(),
           ),
         ),
@@ -118,16 +127,25 @@ class _TasksPageState extends State<TasksPage> {
               itemBuilder: (context, index) {
                 final task = _tasks[index];
                 return Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   child: ListTile(
-                    leading: Checkbox(
+                    leading: Transform.scale(
+                      scale: 1.2,
+                      child: Checkbox(
+                      shape: const CircleBorder(),
                       value: task.completed,
                       onChanged: (_) => _toggleTaskCompletion(task),
+                      ),
                     ),
                     title: Text(
                       task.title,
                       style: TextStyle(
-                        decoration: task.completed ? TextDecoration.lineThrough : null,
+                        decoration: task.completed
+                            ? TextDecoration.lineThrough
+                            : null,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -138,7 +156,9 @@ class _TasksPageState extends State<TasksPage> {
                         Text('Data: ${task.date}'),
                         Text('Prioridade: ${_getPriorityText(task.priority)}'),
                         if (task.getStudyMinutes() > 0)
-                          Text('Tempo estudado: ${_formatTime(task.getStudyMinutes())}'),
+                          Text(
+                            'Tempo estudado: ${_formatTime(task.getStudyMinutes())}',
+                          ),
                       ],
                     ),
                     trailing: IconButton(
@@ -163,7 +183,9 @@ class _TasksPageState extends State<TasksPage> {
     } else {
       final hours = minutes ~/ 60;
       final remainingMinutes = minutes % 60;
-      return remainingMinutes > 0 ? '${hours}h ${remainingMinutes}min' : '${hours}h';
+      return remainingMinutes > 0
+          ? '${hours}h ${remainingMinutes}min'
+          : '${hours}h';
     }
   }
 }
