@@ -15,7 +15,7 @@ Ele inclui técnicas como Pomodoro, gerenciamento de tarefas, criação de resum
 
 ## 🖼️ Prévia
 
-![Tela Principal](./Background (3).png
+![Tela Principal](./background.png)
 
 ## 🚀 Tecnologias
 
