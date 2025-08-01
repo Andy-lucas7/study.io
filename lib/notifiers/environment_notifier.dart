@@ -48,7 +48,7 @@ class EnvironmentConfig {
       'label': 'Cafeteria',
       'image': 'assets/images/coffee.png',
       'backgroundImage': 'assets/images/coffee_background.png',
-      'audio': 'audio/cafeteria.mp3',
+      'audio': 'audio/cafeteria.mp3', 
       'theme': ThemeData.dark().copyWith(
         colorScheme: const ColorScheme.dark(
           primary: Color.fromARGB(255, 80, 55, 46),
@@ -61,12 +61,12 @@ class EnvironmentConfig {
       'label': 'White Noise',
       'image': 'assets/images/white.png',
       'backgroundImage': 'assets/images/white_background.png',
-      'audio': 'audio/white_boise.mp3',
+      'audio': 'audio/white_noise.mp3',
       'theme': ThemeData.dark().copyWith(
         colorScheme: const ColorScheme.dark(
-          primary: Color.fromARGB(255, 255, 255, 255),
-          secondary: Color.fromARGB(255, 105, 105, 105),
-          onPrimary: Color.fromARGB(255, 255, 255, 255),
+          primary: Color.fromARGB(255, 175, 214, 214),
+          secondary: Color.fromARGB(255, 133, 166, 165),
+          onPrimary: Color.fromARGB(255, 189, 255, 246),
         ),
       ),
     },

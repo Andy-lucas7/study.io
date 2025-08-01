@@ -34,6 +34,8 @@ class SettingsDrawer extends StatelessWidget {
         break;
       case Environment.mute:
         drawerBackground = 'assets/icon/banner.png';
+      case Environment.white:
+        drawerBackground = 'assets/images/white.png';
         break;
     }
 
@@ -57,7 +59,7 @@ class SettingsDrawer extends StatelessWidget {
             decoration: BoxDecoration(
               image: DecorationImage(
                 image: AssetImage(drawerBackground),
-                fit: BoxFit.fill,
+                fit: BoxFit.cover,
               ),
             ),
             child: Stack(

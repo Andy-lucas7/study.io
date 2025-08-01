@@ -36,7 +36,9 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final backgroundImagePath = context.watch<EnvironmentNotifier>().backgroundImagePath;
+    final backgroundImagePath = context
+        .watch<EnvironmentNotifier>()
+        .backgroundImagePath;
     final themeNotifier = Provider.of<ThemeNotifier>(context);
     final env = context.read<EnvironmentNotifier>();
     final sound = env.environment.name.toLowerCase();
@@ -54,6 +56,9 @@ class _HomePageState extends State<HomePage> {
     } else if (sound == 'mute') {
       soundLabel = 'sem som';
       environmentIconSound = const Icon(Icons.music_off_rounded);
+    } else if (sound == 'white') {
+      soundLabel = 'som branco';
+      environmentIconSound = const Icon(Icons.wb_sunny_rounded);
     } else {
       soundLabel = sound;
       environmentIconSound = const Icon(Icons.music_off_rounded);
@@ -132,9 +137,10 @@ class _HomePageState extends State<HomePage> {
                   selectedItemColor: themeNotifier.themeMode == ThemeMode.light
                       ? Colors.white
                       : env.environment == Environment.coffee
-                          ? currentTheme.colorScheme.onPrimary
-                          : currentTheme.colorScheme.primary,
-                  unselectedItemColor: themeNotifier.themeMode == ThemeMode.light
+                      ? currentTheme.colorScheme.onPrimary
+                      : currentTheme.colorScheme.primary,
+                  unselectedItemColor:
+                      themeNotifier.themeMode == ThemeMode.light
                       ? currentTheme.colorScheme.secondary
                       : Colors.white70,
                   onTap: (index) {

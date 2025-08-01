@@ -22,6 +22,7 @@ class _SplashPageState extends State<SplashPage>
     'assets/images/forest.png',
     'assets/images/coffee.png',
     'assets/images/rain.png',
+    'assets/images/white.png',
   ];
 
   late String _selectedBackground;
