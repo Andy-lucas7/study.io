@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:study_io/styles.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
@@ -17,7 +18,7 @@ class AboutPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 17, 23, 27),
+      backgroundColor: AppColors.background,
       body: Stack(
         children: [
           // Imagens de fundo
@@ -51,7 +52,6 @@ class AboutPage extends StatelessWidget {
               ),
             ),
           ),
-
           // Conteúdo
           SingleChildScrollView(
             padding: const EdgeInsets.only(top: 140, left: 24, right: 24, bottom: 32),

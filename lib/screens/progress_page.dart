@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'dart:ui';
+import '../notifiers/environment_notifier.dart';
 import '../notifiers/theme_notifier.dart';
 import '../services/database_service.dart';
 import '../models/task.dart';
 import '../widgets/settings_drawer.dart';
-import '../constants.dart';
+import '../styles.dart';
 
 class ProgressPage extends StatefulWidget {
   const ProgressPage({super.key});
@@ -50,14 +52,14 @@ class _ProgressPageState extends State<ProgressPage> {
     );
 
     final completedTasks = allTasks.where((task) => task.completed).toList();
-    final totalMinutes = completedTasks.fold<int>(
+    final totalMinutes = allTasks.fold<int>(
       0,
       (sum, task) => sum + task.getStudyMinutes(),
     );
     final todayTasks = allTasks.where((task) => task.date == today).toList();
     final todayMinutes = todayTasks.fold<int>(
       0,
-      (sum, task) => sum + (task.completed ? task.getStudyMinutes() : 0),
+      (sum, task) => sum + task.getStudyMinutes(),
     );
     final weekTasks = allTasks.where((task) {
       final taskDate = DateTime.parse(task.date);
@@ -66,7 +68,7 @@ class _ProgressPageState extends State<ProgressPage> {
     }).toList();
     final weekMinutes = weekTasks.fold<int>(
       0,
-      (sum, task) => sum + (task.completed ? task.getStudyMinutes() : 0),
+      (sum, task) => sum + task.getStudyMinutes(),
     );
 
     final List<int> dailyMinutes = List.filled(7, 0);
@@ -76,7 +78,7 @@ class _ProgressPageState extends State<ProgressPage> {
           .toList();
       dailyMinutes[i] = dayTasks.fold<int>(
         0,
-        (sum, task) => sum + (task.completed ? task.getStudyMinutes() : 0),
+        (sum, task) => sum + task.getStudyMinutes(),
       );
     }
 
@@ -109,7 +111,9 @@ class _ProgressPageState extends State<ProgressPage> {
     final currentTheme = themeNotifier.themeMode == ThemeMode.light
         ? themeNotifier.lightTheme
         : themeNotifier.darkTheme;
+
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: Text('Progresso', style: AppFonts().montserratTitle),
         backgroundColor: Colors.transparent,
@@ -146,7 +150,7 @@ class _ProgressPageState extends State<ProgressPage> {
                 ),
                 Text(
                   '${(_progressPercent * 100).toStringAsFixed(0)}% Concluídos',
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
                   ),
@@ -201,7 +205,7 @@ class _ProgressPageState extends State<ProgressPage> {
                       _tasksCompleted > 1
                           ? 'Você já concluiu $_tasksCompleted tarefas no total!'
                           : 'Você já concluiu $_tasksCompleted tarefa no total!',
-                      style: TextStyle(fontSize: 17),
+                      style: const TextStyle(fontSize: 17),
                     ),
                   ],
                 ),
@@ -218,13 +222,6 @@ class _ProgressPageState extends State<ProgressPage> {
               decoration: BoxDecoration(
                 color: AppColors.tile,
                 borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.5),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
               ),
               child: _buildBarChart(currentTheme),
             ),
@@ -253,6 +250,7 @@ class _ProgressPageState extends State<ProgressPage> {
 
   Widget _statCard(String title, String value, IconData icon, ThemeData theme) {
     return Card(
+      color: AppColors.tile,
       elevation: 2,
       child: Container(
         width: 160,
@@ -263,7 +261,7 @@ class _ProgressPageState extends State<ProgressPage> {
             const SizedBox(height: 8),
             Text(
               value,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
@@ -317,7 +315,7 @@ class _ProgressPageState extends State<ProgressPage> {
               decoration: BoxDecoration(
                 color: isToday
                     ? theme.colorScheme.primary
-                    : theme.colorScheme.primary.withOpacity(0.7),
+                    : theme.colorScheme.primary,
                 borderRadius: BorderRadius.circular(6),
                 border: isToday
                     ? Border.all(color: theme.colorScheme.secondary, width: 2)
@@ -332,7 +330,7 @@ class _ProgressPageState extends State<ProgressPage> {
                 fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
                 color: isToday
                     ? theme.colorScheme.primary
-                    : theme.colorScheme.onSurface.withOpacity(0.7),
+                    : theme.colorScheme.onSurface,
               ),
             ),
           ],

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:study_io/constants.dart';
+import 'package:study_io/styles.dart';
 import '../notifiers/theme_notifier.dart';
 import '../notifiers/environment_notifier.dart';
 import 'package:google_fonts/google_fonts.dart';

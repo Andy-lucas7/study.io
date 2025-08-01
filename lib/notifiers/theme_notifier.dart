@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:study_io/constants.dart';
+import 'package:study_io/styles.dart';
 import 'environment_notifier.dart';
 
 class ThemeNotifier extends ChangeNotifier {

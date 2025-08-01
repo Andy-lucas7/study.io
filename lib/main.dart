@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'notifiers/environment_notifier.dart';
-import 'screens/splash_page.dart';
+import 'notifiers/pomodoro_notifier.dart';
 import 'notifiers/theme_notifier.dart';
+import 'screens/splash_page.dart';
 import 'services/database_service.dart';
 
 final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
@@ -14,6 +15,7 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => EnvironmentNotifier()),
+        ChangeNotifierProvider(create: (_) => PomodoroNotifier()),
         ChangeNotifierProvider(
           create: (context) => ThemeNotifier(Provider.of<EnvironmentNotifier>(context, listen: false)),
         ),
@@ -22,12 +24,12 @@ void main() async {
         final themeNotifier = Provider.of<ThemeNotifier>(context);
 
         return MaterialApp(
-          title: 'study.io',
+          title: 'Study.io',
           debugShowCheckedModeBanner: false,
           theme: themeNotifier.lightTheme,
           darkTheme: themeNotifier.darkTheme,
           themeMode: themeNotifier.themeMode,
-          home: SplashPage(),
+          home: const SplashPage(),
           navigatorObservers: [routeObserver],
         );
       },

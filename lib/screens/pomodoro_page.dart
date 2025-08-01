@@ -1,50 +1,20 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../notifiers/pomodoro_notifier.dart';
 import '../notifiers/theme_notifier.dart';
-import 'dart:ui';
 import '../services/database_service.dart';
 import '../models/task.dart';
 import '../widgets/settings_drawer.dart';
+import '../styles.dart';
 import 'package:intl/intl.dart';
-import '../constants.dart';
 
-class PomodoroPage extends StatefulWidget {
+class PomodoroPage extends StatelessWidget {
   const PomodoroPage({super.key});
 
-  @override
-  State<PomodoroPage> createState() => _PomodoroPageState();
-}
-
-class _PomodoroPageState extends State<PomodoroPage>
-    with SingleTickerProviderStateMixin {
-  late Timer _timer;
-  Duration _remaining = Duration.zero;
-  bool _isRunning = false;
-  bool _isFocus = true;
-  Task? _selectedTask;
-  DateTime? _sessionStartTime;
-
-  String _selectedSession = 'Clássico 25 min | 5 min';
-  final Map<String, Duration> _focusDurations = {
-    'Iniciante 10 min | 5 min': const Duration(minutes: 10),
-    'Clássico 25 min | 5 min': const Duration(minutes: 25),
-    'Produtivo 30 min | 10 min': const Duration(minutes: 30),
-    'Intermediário 1H | 15 min': const Duration(minutes: 60),
-    'Avançado 1H30 | 20 min': const Duration(minutes: 90),
-    'Mestre do Foco 3H | 30 min': const Duration(minutes: 180),
-  };
-
-  final Map<String, Duration> _breakDurations = {
-    'Iniciante 10 min | 5 min': const Duration(minutes: 5),
-    'Clássico 25 min | 5 min': const Duration(minutes: 5),
-    'Produtivo 30 min | 10 min': const Duration(minutes: 10),
-    'Intermediário 1H | 15 min': const Duration(minutes: 15),
-    'Avançado 1H30 | 20 min': const Duration(minutes: 20),
-    'Mestre do Foco 3H | 30 min': const Duration(minutes: 30),
-  };
-
-  Future<void> _selectTask() async {
+  Future<void> _selectTask(
+    BuildContext context,
+    PomodoroNotifier notifier,
+  ) async {
     final tasks = await DatabaseService.getTasksByDate(
       DateFormat('yyyy-MM-dd').format(DateTime.now()),
     );
@@ -67,11 +37,9 @@ class _PomodoroPageState extends State<PomodoroPage>
             itemBuilder: (context, index) {
               final task = tasks[index];
               return ListTile(
-                title: Text(task.title),
+                title: Text(task.title, textAlign: TextAlign.center),
                 onTap: () {
-                  setState(() {
-                    _selectedTask = task;
-                  });
+                  notifier.selectTask(task);
                   Navigator.pop(context);
                 },
               );
@@ -88,114 +56,16 @@ class _PomodoroPageState extends State<PomodoroPage>
     );
   }
 
-  void _startTimer() {
-    if (_selectedTask == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Selecione uma tarefa antes de iniciar.')),
-      );
-      return;
-    }
-    _sessionStartTime = DateTime.now();
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_remaining.inSeconds <= 1) {
-        _toggleSession();
-      } else {
-        setState(() {
-          _remaining -= const Duration(seconds: 1);
-        });
-      }
-    });
-  }
-
-  void _toggleSession() async {
-    _timer.cancel();
-    if (_isFocus && _selectedTask != null) {
-      final endTime = DateTime.now();
-      await DatabaseService.updateTaskTime(
-        _selectedTask!.id!,
-        _sessionStartTime,
-        endTime,
-      );
-    }
-    setState(() {
-      _isFocus = !_isFocus;
-      _remaining = _isFocus
-          ? _focusDurations[_selectedSession]!
-          : _breakDurations[_selectedSession]!;
-    });
-    if (_isFocus) {
-      _startTimer();
-    }
-  }
-
-  void _handleStartPause() {
-    if (_isRunning) {
-      _timer.cancel();
-      if (_isFocus && _selectedTask != null) {
-        DatabaseService.updateTaskTime(
-          _selectedTask!.id!,
-          _sessionStartTime,
-          DateTime.now(),
-        );
-      }
-      setState(() {
-        _isRunning = false;
-      });
-    } else {
-      if (_remaining == Duration.zero) {
-        setState(() {
-          _remaining = _isFocus
-              ? _focusDurations[_selectedSession]!
-              : _breakDurations[_selectedSession]!;
-        });
-      }
-      _startTimer();
-      setState(() {
-        _isRunning = true;
-      });
-    }
-  }
-
-  void _resetTimer() {
-    _timer.cancel();
-    if (_isFocus && _selectedTask != null) {
-      DatabaseService.updateTaskTime(_selectedTask!.id!, null, null);
-    }
-    setState(() {
-      _isRunning = false;
-      _isFocus = true;
-      _remaining = Duration.zero;
-      _sessionStartTime = null;
-    });
-  }
-
-  String _formatDuration(Duration d) {
-    final minutes = d.inMinutes.remainder(60).toString().padLeft(2, '0');
-    final seconds = d.inSeconds.remainder(60).toString().padLeft(2, '0');
-    return '${d.inHours > 0 ? '${d.inHours}:' : ''}$minutes:$seconds';
-  }
-
-  double _getProgress() {
-    final total = _isFocus
-        ? _focusDurations[_selectedSession]!.inSeconds
-        : _breakDurations[_selectedSession]!.inSeconds;
-    return 1.0 - (_remaining.inSeconds / total);
-  }
-
-  @override
-  void dispose() {
-    if (_isRunning) _timer.cancel();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
     final themeNotifier = context.watch<ThemeNotifier>();
+    final pomodoroNotifier = context.watch<PomodoroNotifier>();
     final currentTheme = themeNotifier.themeMode == ThemeMode.light
         ? themeNotifier.lightTheme
         : themeNotifier.darkTheme;
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: Text('Timer Pomodoro', style: AppFonts().montserratTitle),
         backgroundColor: Colors.transparent,
@@ -209,7 +79,7 @@ class _PomodoroPageState extends State<PomodoroPage>
       ),
       drawer: const SettingsDrawer(),
       body: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(22.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -218,106 +88,91 @@ class _PomodoroPageState extends State<PomodoroPage>
               runSpacing: 12,
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
-                SizedBox(
-                  width: 200.0,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<String>(
-                            alignment: AlignmentDirectional.center,
-                            borderRadius: BorderRadius.circular(16),
-                            isExpanded: true,
-                            dropdownColor: AppColors.tile.withOpacity(0.9),
-                            value: _selectedSession,
-                            icon: Icon(
-                              Icons.arrow_drop_down,
-                              color: Colors.white,
-                            ),
-                            style: TextStyle(color: Colors.white, fontSize: 16),
-                            onChanged: _isRunning
-                                ? null
-                                : (value) {
-                                    if (value != null) {
-                                      setState(() {
-                                        _selectedSession = value;
-                                        _remaining = Duration.zero;
-                                      });
-                                    }
-                                  },
-                            items: _focusDurations.keys.map((label) {
-                              return DropdownMenuItem(
-                                value: label,
-                                child: Text(label),
-                              );
-                            }).toList(),
-                            selectedItemBuilder: (BuildContext context) {
-                              return _focusDurations.keys.map((label) {
-                                String displayLabel;
-                                switch (label) {
-                                  case 'Iniciante 10 min | 5 min':
-                                    displayLabel = 'Iniciante';
-                                    break;
-                                  case 'Clássico 25 min | 5 min':
-                                    displayLabel = 'Clássico';
-                                    break;
-                                  case 'Produtivo 30 min | 10 min':
-                                    displayLabel = 'Produtivo';
-                                    break;
-                                  case 'Intermediário 1H | 15 min':
-                                    displayLabel = 'Intermediário';
-                                    break;
-                                  case 'Avançado 1H30 | 20 min':
-                                    displayLabel = 'Avançado';
-                                    break;
-                                  case 'Mestre do Foco 3H | 30 min':
-                                    displayLabel = 'Mestre do Foco';
-                                  default:
-                                    displayLabel = label;
-                                }
-
-                                return Text(
-                                  displayLabel,
-                                  style: TextStyle(color: Colors.white),
-                                );
-                              }).toList();
-                            },
-                          ),
-                        ),
+                Container(
+                  width: MediaQuery.of(context).size.width * 0.37,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppColors.tile,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: 
+                    DropdownButton<String>(
+                      menuWidth: 230,
+                      isDense: true,
+                      isExpanded: true,
+                      alignment: Alignment.center,
+                      borderRadius: BorderRadius.circular(20),
+                      dropdownColor: const Color.fromARGB(65, 27, 27, 27).withOpacity(0.85),
+                      value: pomodoroNotifier.selectedSession,
+                      icon: Icon(
+                        color: Colors.white,
+                        Icons.keyboard_arrow_down_rounded,
                       ),
+                      style: AppFonts().montserratTitle.copyWith(
+                            fontSize: 16,
+                            color: Colors.white
+                          ),
+                      onChanged: pomodoroNotifier.isRunning
+                          ? null
+                          : (value) {
+                              if (value != null) {
+                                pomodoroNotifier.setSession(value);
+                              }
+                            },
+                      items: pomodoroNotifier.focusSessionKeys.map((label) {
+                        return DropdownMenuItem(
+                          alignment: Alignment.center,
+                          value: label,
+                          child: Text(
+                            label,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 16,
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                      selectedItemBuilder: (BuildContext context) {
+                        return pomodoroNotifier.focusSessionKeys.map((label) {
+                          String displayLabel;
+                          switch (label) {
+                            case 'Iniciante 10 min | 5 min':
+                              displayLabel = 'Iniciante';
+                              break;
+                            case 'Clássico 25 min | 5 min':
+                              displayLabel = 'Clássico';
+                              break;
+                            case 'Produtivo 30 min | 10 min':
+                              displayLabel = 'Produtivo';
+                              break;
+                            case 'Intermediário 1H | 15 min':
+                              displayLabel = 'Intermediário';
+                              break;
+                            case 'Avançado 1H30 | 20 min':
+                              displayLabel = 'Avançado';
+                              break;
+                            case 'Mestre do Foco 3H | 30 min':
+                              displayLabel = 'Mestre do Foco';
+                              break;
+                            default:
+                              displayLabel = label;
+                          }
+                          return Center(
+                            child: Text(
+                              displayLabel,
+                              style: TextStyle(
+                                fontSize: 16,
+                              ),
+                            ),
+                          );
+                        }).toList();
+                      },
                     ),
                   ),
                 ),
               ],
             ),
-            /*
-            ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    "Botão Blur",
-                    style: TextStyle(color: Colors.white, fontSize: 16),
-                  ),
-                ),
-              ),
-            ),*/
             const SizedBox(height: 20),
             Expanded(
               child: Column(
@@ -325,10 +180,10 @@ class _PomodoroPageState extends State<PomodoroPage>
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    _isFocus ? 'Modo: Foco' : 'Modo: Pausa',
+                    pomodoroNotifier.isFocus ? 'Modo: Foco' : 'Modo: Pausa',
                     style: AppFonts().montserratTitle.copyWith(fontSize: 18),
                   ),
-                  SizedBox(height: 22),
+                  const SizedBox(height: 22),
                   Stack(
                     alignment: Alignment.center,
                     children: [
@@ -336,15 +191,15 @@ class _PomodoroPageState extends State<PomodoroPage>
                         width: 250,
                         height: 250,
                         child: CircularProgressIndicator(
-                          value: _remaining == Duration.zero
+                          value: pomodoroNotifier.remaining == Duration.zero
                               ? 0.0
-                              : _getProgress(),
+                              : pomodoroNotifier.getProgress(),
                           strokeWidth: 16,
                           valueColor: AlwaysStoppedAnimation(
                             currentTheme.colorScheme.primary,
                           ),
-                          backgroundColor: currentTheme.colorScheme.primary
-                              .withOpacity(0.1),
+                          backgroundColor:
+                              currentTheme.colorScheme.primary.withOpacity(0.3),
                           strokeCap: StrokeCap.round,
                         ),
                       ),
@@ -352,14 +207,19 @@ class _PomodoroPageState extends State<PomodoroPage>
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            _formatDuration(_remaining),
-                            style: Theme.of(context).textTheme.displayMedium
-                                ?.copyWith(fontWeight: FontWeight.w600),
+                            pomodoroNotifier.formatDuration(
+                              pomodoroNotifier.remaining,
+                            ),
+                            style: AppFonts().quicksandTitle.copyWith(
+                                  fontSize: 58,
+                                  fontWeight: FontWeight.w100,
+                                ),
                           ),
                           ElevatedButton(
-                            onPressed: _selectTask,
+                            onPressed: () => _selectTask(context, pomodoroNotifier),
                             child: Text(
-                              _selectedTask?.title ?? 'Selecionar Tarefa',
+                              pomodoroNotifier.selectedTask?.title ??
+                                  'Selecionar Tarefa',
                               style: TextStyle(
                                 color: currentTheme.colorScheme.onPrimary,
                               ),
@@ -376,22 +236,31 @@ class _PomodoroPageState extends State<PomodoroPage>
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 ElevatedButton.icon(
-                  onPressed: _handleStartPause,
+                  onPressed: pomodoroNotifier.selectedTask == null
+                      ? () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Selecione uma tarefa antes de iniciar.'),
+                            ),
+                          );
+                        }
+                      : pomodoroNotifier.toggleStartPause,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: currentTheme.colorScheme.primary,
                   ),
                   icon: Icon(
-                    _isRunning ? Icons.pause : Icons.play_arrow,
+                    pomodoroNotifier.isRunning ? Icons.pause : Icons.play_arrow,
                     color: Colors.white,
                   ),
                   label: Text(
-                    _isRunning ? 'Pausar' : 'Iniciar',
+                    pomodoroNotifier.isRunning ? 'Pausar' : 'Iniciar',
                     style: const TextStyle(color: Colors.white),
                   ),
                 ),
                 ElevatedButton.icon(
-                  onPressed: _isRunning || _remaining > Duration.zero
-                      ? _resetTimer
+                  onPressed: pomodoroNotifier.isRunning ||
+                          pomodoroNotifier.remaining > Duration.zero
+                      ? pomodoroNotifier.resetTimer
                       : null,
                   icon: const Icon(Icons.replay),
                   label: const Text('Resetar'),

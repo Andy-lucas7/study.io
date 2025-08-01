@@ -1,47 +1,31 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../notifiers/environment_notifier.dart';
-import '../notifiers/theme_notifier.dart';
+import '../styles.dart';
 import '../widgets/settings_drawer.dart';
-import '../constants.dart';
 
-class EnvironmentSoundPage extends StatefulWidget {
-  const EnvironmentSoundPage({super.key});
+class WaveAnimation extends StatefulWidget {
+  final bool isActive;
+  final Widget child;
+
+  const WaveAnimation({super.key, required this.isActive, required this.child});
 
   @override
-  State<EnvironmentSoundPage> createState() => _EnvironmentSoundPageState();
+  State<WaveAnimation> createState() => _WaveAnimationState();
 }
 
-class _EnvironmentSoundPageState extends State<EnvironmentSoundPage>
+class _WaveAnimationState extends State<WaveAnimation>
     with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _radiusAnimation;
-  Offset _tapPosition = Offset.zero;
-  String? _oldImagePath;
-  bool _showAnimation = false;
+  late final AnimationController _controller;
 
   @override
   void initState() {
     super.initState();
-
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1000),
-    );
-
-    _radiusAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.5,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
-
-    _controller.addStatusListener((status) {
-      if (status == AnimationStatus.completed) {
-        setState(() {
-          _showAnimation = false;
-          _oldImagePath = null;
-        });
-      }
-    });
+      duration: const Duration(seconds: 2),
+    )..repeat();
   }
 
   @override
@@ -50,57 +34,82 @@ class _EnvironmentSoundPageState extends State<EnvironmentSoundPage>
     super.dispose();
   }
 
-  void _startAnimation(Offset position) {
-    if (_controller.isAnimating) return;
+  @override
+  Widget build(BuildContext context) {
+    if (!widget.isActive) return widget.child;
 
-    final env = context.read<EnvironmentNotifier>();
-    setState(() {
-      _tapPosition = position;
-      _oldImagePath = env.backgroundImagePath;
-      _showAnimation = true;
-    });
-
-    env.switchEnvironment();
-    _controller.forward(from: 0.0);
-  }
-
-  Widget _buildVinhetaBackground(String path) {
-      final themeNotifier = context.read<ThemeNotifier>();
-    return Container(
-      decoration: BoxDecoration(color: themeNotifier.darkTheme.scaffoldBackgroundColor),
-      child: ShaderMask(
-        blendMode: BlendMode.dstIn,
-        shaderCallback: (bounds) => RadialGradient(
-          center: Alignment.center,
-          radius: 0.9, // ⬅️ aumenta ou diminui o raio da vinheta
-          colors: [
-            Colors.white,
-            Colors.transparent,
-          ],
-          stops: const [0.4, 5.0], // ⬅️ muda onde começa e termina o fade
-        ).createShader(bounds),
-        child: path.isNotEmpty
-            ? Image.asset(
-                path,
-                width: double.infinity,
-                height: double.infinity,
-                fit: BoxFit.cover,
-              )
-            : const SizedBox.shrink(),
-      ),
+    return Stack(
+      children: [
+        CustomPaint(painter: _WavePainter(_controller), child: Container()),
+        widget.child,
+      ],
     );
+  }
+}
+
+class _WavePainter extends CustomPainter {
+  final AnimationController controller;
+
+  _WavePainter(this.controller) : super(repaint: controller);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
+
+    final center = Offset(size.width / 2, size.height / 2);
+    const cornerRadius = Radius.circular(20);
+    final maxExpand = size.width * 0.08;
+
+    for (int i = 0; i < 3; i++) {
+      final progress = (controller.value + i / 3) % 1.0;
+      final expand = progress * maxExpand;
+      paint.color = const Color.fromARGB(
+        180,
+        255,
+        255,
+        255,
+      ).withOpacity(1 - progress);
+
+      final rrect = RRect.fromRectAndRadius(
+        Rect.fromCenter(
+          center: center,
+          width: (size.width - 3) + expand * 2,
+          height: (size.height - 3) + expand * 2,
+        ),
+        cornerRadius,
+      );
+
+      canvas.drawRRect(rrect, paint);
+    }
   }
 
   @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+}
+
+class EnvironmentSoundPage extends StatelessWidget {
+  const EnvironmentSoundPage({super.key});
+
+  @override
   Widget build(BuildContext context) {
-    final env = context.watch<EnvironmentNotifier>();
-    final newImagePath = env.backgroundImagePath;
+    final envNotifier = Provider.of<EnvironmentNotifier>(context);
+    final currentEnv = envNotifier.environment;
+    final isPlaying = envNotifier.isPlaying;
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        centerTitle: true,
+        automaticallyImplyLeading: false,
         backgroundColor: Colors.transparent,
-        title: Text('Som Ambiente', style: AppFonts().montserratTitle),
+        elevation: 0,
+        centerTitle: true,
+        title: Text(
+          'Som Ambiente',
+          style: AppFonts().montserratTitle.copyWith(),
+        ),
         leading: Builder(
           builder: (context) => IconButton(
             icon: Image.asset('assets/icon/Icon_fill.png'),
@@ -109,99 +118,58 @@ class _EnvironmentSoundPageState extends State<EnvironmentSoundPage>
         ),
       ),
       drawer: const SettingsDrawer(),
-      body: Stack(
-        children: [
-          _buildVinhetaBackground(newImagePath),
-          if (_showAnimation && _oldImagePath != null)
-            AnimatedBuilder(
-              animation: _radiusAnimation,
-              builder: (_, __) {
-                final size = MediaQuery.of(context).size;
-                final radius =
-                    _radiusAnimation.value * (size.width + size.height);
-                return ClipPath(
-                  clipper: CircularHoleClipper(
-                    center: _tapPosition,
-                    radius: radius,
-                  ),
-                  child: _buildVinhetaBackground(_oldImagePath!),
-                );
+      body: Padding(
+        padding: const EdgeInsets.all(12),
+        child: GridView.count(
+          crossAxisCount: 2,
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          children: Environment.values.map((env) {
+            final isSelected = currentEnv == env;
+            final showWave = isSelected && isPlaying && env != Environment.mute;
+
+            return GestureDetector(
+              onTap: () {
+                if (env == currentEnv) {
+                  envNotifier.togglePlayPause();
+                } else {
+                  envNotifier.setEnvironment(env);
+                }
               },
-            ),
-          Center(
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTapDown: (details) => _startAnimation(details.globalPosition),
-              child: Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: const Color.fromARGB(68, 255, 255, 255),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 2),
+              child: WaveAnimation(
+                isActive: showWave,
+                child: Container(
+                  alignment: Alignment.bottomLeft,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    border: isSelected && !showWave
+                        ? Border.all(color: Colors.white, width: 2)
+                        : null,
+                    image: DecorationImage(
+                      image: AssetImage(EnvironmentConfig.getImage(env)),
+                      fit: BoxFit.cover,
+                      colorFilter: ColorFilter.mode(
+                        Colors.black.withOpacity(0.4),
+                        BlendMode.darken,
+                      ),
+                    ),
+                    color: AppColors.tile,
+                  ),
+                  padding: const EdgeInsets.all(16),
+                    child: Text(
+                      EnvironmentConfig.getLabel(env),
+                      style: AppFonts().montserratTitle.copyWith(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w100,
+                      ),
+                    ),
+                  ),
                 ),
-                child: const Icon(
-                  Icons.music_note,
-                  size: 60,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            top: MediaQuery.of(context).size.height * 0.30,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: Text(
-                () {
-                  if (env.environment == Environment.mute) {
-                    return 'Som ambiente desligado...';
-                  } else if (env.environment == Environment.forest) {
-                    return 'Tocando som de floresta...';
-                  } else if (env.environment == Environment.coffee) {
-                    return 'Tocando som de cafeteria...';
-                  } else if (env.environment == Environment.rain) {
-                    return 'Tocando som de chuva...';
-                  } else {
-                    return 'Tocando som de ${env.environment}...';
-                  }
-                }(),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  shadows: [
-                    Shadow(
-                      color: Colors.black54,
-                      offset: Offset(1, 1),
-                      blurRadius: 3,
-                    )
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
+            );
+          }).toList(),
+        ),
       ),
     );
   }
-}
-
-class CircularHoleClipper extends CustomClipper<Path> {
-  final Offset center;
-  final double radius;
-
-  const CircularHoleClipper({required this.center, required this.radius});
-
-  @override
-  Path getClip(Size size) {
-    final full = Path()..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
-    final hole = Path()
-      ..addOval(Rect.fromCircle(center: center, radius: radius));
-    return Path.combine(PathOperation.difference, full, hole);
-  }
-
-  @override
-  bool shouldReclip(CircularHoleClipper old) =>
-      radius != old.radius || center != old.center;
 }

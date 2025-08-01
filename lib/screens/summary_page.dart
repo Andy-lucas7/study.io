@@ -10,7 +10,7 @@ import 'package:share_plus/share_plus.dart';
 import '../notifiers/theme_notifier.dart';
 import '../notifiers/environment_notifier.dart';
 import '../widgets/settings_drawer.dart';
-import 'package:study_io/constants.dart';
+import 'package:study_io/styles.dart';
 
 class Summary {
   String id;
@@ -28,20 +28,20 @@ class Summary {
   });
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'title': title,
-        'description': description,
-        'content': content,
-        'createdAt': createdAt.toIso8601String(),
-      };
+    'id': id,
+    'title': title,
+    'description': description,
+    'content': content,
+    'createdAt': createdAt.toIso8601String(),
+  };
 
   factory Summary.fromJson(Map<String, dynamic> json) => Summary(
-        id: json['id'],
-        title: json['title'],
-        description: json['description'],
-        content: json['content'],
-        createdAt: DateTime.parse(json['createdAt']),
-      );
+    id: json['id'],
+    title: json['title'],
+    description: json['description'],
+    content: json['content'],
+    createdAt: DateTime.parse(json['createdAt']),
+  );
 }
 
 class SummaryPage extends StatefulWidget {
@@ -135,145 +135,126 @@ class _SummaryPageState extends State<SummaryPage> {
 
   @override
   Widget build(BuildContext context) {
-    final backgroundImagePath = EnvironmentNotifier().backgroundImagePath;
     final themeNotifier = Provider.of<ThemeNotifier>(context);
     final currentTheme = themeNotifier.themeMode == ThemeMode.light
         ? themeNotifier.lightTheme
         : themeNotifier.darkTheme;
 
-    return Stack(
-      children: [
-        Positioned.fill(
-          child: Image.asset(
-            backgroundImagePath,
-            fit: BoxFit.cover,
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+        title: Text('Resumos', style: AppFonts().montserratTitle.copyWith()),
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: Image.asset('assets/icon/Icon_fill.png'),
+            onPressed: () => Scaffold.of(context).openDrawer(),
           ),
         ),
-        Positioned.fill(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-            child: Container(
-              color: Colors.black.withOpacity(0.3),
-            ),
-          ),
-        ),
-        Scaffold(
-          backgroundColor: Colors.transparent,
-          appBar: AppBar(
-            automaticallyImplyLeading: false,
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            centerTitle: true,
-            title: Text('Resumos', style: AppFonts().montserratTitle.copyWith()),
-            leading: Builder(
-              builder: (context) => IconButton(
-                icon: Image.asset('assets/icon/Icon_fill.png'),
-                onPressed: () => Scaffold.of(context).openDrawer(),
-              ),
-            ),
-          ),
-          drawer: const SettingsDrawer(),
-          body: _summaries.isEmpty
-              ? const Center(child: Text('Nenhum resumo criado ainda.'))
-              : Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: GridView.count(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                    childAspectRatio: 0.85,
-                    children: _summaries.map((summary) {
-                      return GestureDetector(
-                        onTap: () {
-                          showDialog(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              title: Text(summary.title),
-                              content: SingleChildScrollView(
-                                child: Text(summary.content),
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context),
-                                  child: const Text('Fechar'),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: const Color.fromARGB(180, 35, 42, 56),
-                            borderRadius: BorderRadius.circular(16),
+      ),
+      drawer: const SettingsDrawer(),
+      body: _summaries.isEmpty
+          ? const Center(child: Text('Nenhum resumo criado ainda.'))
+          : Padding(
+              padding: const EdgeInsets.all(16),
+              child: GridView.count(
+                crossAxisCount: 2,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                childAspectRatio: 0.85,
+                children: _summaries.map((summary) {
+                  return GestureDetector(
+                    onTap: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: Text(summary.title),
+                          content: SingleChildScrollView(
+                            child: Text(summary.content),
                           ),
-                          padding: const EdgeInsets.all(12),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text('Fechar'),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.tile,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            summary.title,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            summary.description.isEmpty
+                                ? 'Sem descrição'
+                                : summary.description,
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 13,
+                            ),
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const Spacer(),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(
-                                summary.title,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                summary.description.isEmpty
-                                    ? 'Sem descrição'
-                                    : summary.description,
-                                style: const TextStyle(
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.edit,
                                   color: Colors.white70,
-                                  fontSize: 13,
                                 ),
-                                maxLines: 3,
-                                overflow: TextOverflow.ellipsis,
+                                onPressed: () =>
+                                    _showCreateEditDialog(summary: summary),
                               ),
-                              const Spacer(),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(
-                                      Icons.edit,
-                                      color: Colors.white70,
-                                    ),
-                                    onPressed: () =>
-                                        _showCreateEditDialog(summary: summary),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(
-                                      Icons.share,
-                                      color: Colors.white70,
-                                    ),
-                                    onPressed: () => _exportSummary(summary),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(
-                                      Icons.delete,
-                                      color: Colors.redAccent,
-                                    ),
-                                    onPressed: () => _deleteSummary(summary),
-                                  ),
-                                ],
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.share,
+                                  color: Colors.white70,
+                                ),
+                                onPressed: () => _exportSummary(summary),
+                              ),
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.delete,
+                                  color: Colors.redAccent,
+                                ),
+                                onPressed: () => _deleteSummary(summary),
                               ),
                             ],
                           ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ),
-          floatingActionButton: FloatingActionButton(
-            onPressed: () => _showCreateEditDialog(),
-            backgroundColor: currentTheme.colorScheme.primary,
-            child: const Icon(Icons.add, color: Colors.white),
-          ),
-        ),
-      ],
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showCreateEditDialog(),
+        backgroundColor: currentTheme.colorScheme.primary,
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
     );
   }
 }

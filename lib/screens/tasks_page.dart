@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/task.dart';
 import 'new_task_page.dart';
+import 'package:provider/provider.dart';
 import '../services/database_service.dart';
 import '../widgets/settings_drawer.dart';
-import '../constants.dart';
+import '../styles.dart';
+import '../notifiers/environment_notifier.dart';
+import 'dart:ui';
 
 class TasksPage extends StatefulWidget {
   const TasksPage({super.key});
@@ -98,6 +101,7 @@ class _TasksPageState extends State<TasksPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         centerTitle: true,
@@ -135,9 +139,9 @@ class _TasksPageState extends State<TasksPage> {
                     leading: Transform.scale(
                       scale: 1.2,
                       child: Checkbox(
-                      shape: const CircleBorder(),
-                      value: task.completed,
-                      onChanged: (_) => _toggleTaskCompletion(task),
+                        shape: const CircleBorder(),
+                        value: task.completed,
+                        onChanged: (_) => _toggleTaskCompletion(task),
                       ),
                     ),
                     title: Text(
