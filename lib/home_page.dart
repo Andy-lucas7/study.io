@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'screens/tasks_page.dart';
 import 'screens/pomodoro_page.dart';
-import 'notifiers/environment_notifier.dart';
 import 'screens/environment_sound_page.dart';
 import 'screens/summary_page.dart';
 import 'screens/progress_page.dart';
-import 'notifiers/theme_notifier.dart';
-import 'styles.dart';
+import 'core/app_config.dart';
+import 'package:hugeicons/hugeicons.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -39,34 +38,31 @@ class _HomePageState extends State<HomePage> {
     final backgroundImagePath = context
         .watch<EnvironmentNotifier>()
         .backgroundImagePath;
-    final themeNotifier = Provider.of<ThemeNotifier>(context);
     final env = context.read<EnvironmentNotifier>();
     final sound = env.environment.name.toLowerCase();
     Icon environmentIconSound;
     String soundLabel;
     if (sound == 'coffee') {
       soundLabel = 'som de cafeteria';
-      environmentIconSound = const Icon(Icons.coffee);
+      environmentIconSound = Icon(HugeIcons.strokeRoundedCoffee02);
     } else if (sound == 'rain') {
       soundLabel = 'som de chuva';
-      environmentIconSound = const Icon(Icons.water_drop_rounded);
+      environmentIconSound = Icon(HugeIcons.strokeRoundedCloud);
     } else if (sound == 'forest') {
       soundLabel = 'som de floresta';
-      environmentIconSound = const Icon(Icons.forest_rounded);
+      environmentIconSound = Icon(HugeIcons.strokeRoundedPineTree);
     } else if (sound == 'mute') {
       soundLabel = 'sem som';
-      environmentIconSound = const Icon(Icons.music_off_rounded);
+      environmentIconSound = Icon(HugeIcons.strokeRoundedVolumeMute02);
     } else if (sound == 'white') {
       soundLabel = 'som branco';
-      environmentIconSound = const Icon(Icons.wb_sunny_rounded);
+      environmentIconSound = Icon(HugeIcons.strokeRoundedVoice);
     } else {
       soundLabel = sound;
-      environmentIconSound = const Icon(Icons.music_off_rounded);
+      environmentIconSound = Icon(HugeIcons.strokeRoundedVolumeMute02);
     }
 
-    final currentTheme = themeNotifier.themeMode == ThemeMode.light
-        ? themeNotifier.lightTheme
-        : themeNotifier.darkTheme;
+    final currentTheme = Theme.of(context);
 
     return Stack(
       children: [
@@ -86,7 +82,7 @@ class _HomePageState extends State<HomePage> {
                   )
                 : Container(
                     key: const ValueKey('empty'),
-                    color: AppColors.background,
+                    color: AppConfig.background,
                   ),
           ),
         ),
@@ -134,15 +130,11 @@ class _HomePageState extends State<HomePage> {
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
                   ),
-                  selectedItemColor: themeNotifier.themeMode == ThemeMode.light
-                      ? Colors.white
-                      : env.environment == Environment.coffee
+                  selectedItemColor: env.environment == Environment.coffee
                       ? currentTheme.colorScheme.onPrimary
                       : currentTheme.colorScheme.primary,
                   unselectedItemColor:
-                      themeNotifier.themeMode == ThemeMode.light
-                      ? currentTheme.colorScheme.secondary
-                      : Colors.white70,
+                  currentTheme.colorScheme.secondary,
                   onTap: (index) {
                     setState(() {
                       _currentIndex = index;
@@ -156,28 +148,28 @@ class _HomePageState extends State<HomePage> {
                   type: BottomNavigationBarType.shifting,
                   items: [
                     BottomNavigationBarItem(
-                      backgroundColor: AppColors.background,
-                      icon: const Icon(Icons.check_circle),
+                      backgroundColor: AppConfig.background.withOpacity(0.34),
+                      icon: Icon(HugeIcons.strokeRoundedTask01, color: currentTheme.colorScheme.primary,),
                       label: 'Tarefas',
                     ),
                     BottomNavigationBarItem(
-                      backgroundColor: AppColors.background,
-                      icon: const Icon(Icons.timer),
+                      backgroundColor: AppConfig.background.withOpacity(0.34),
+                      icon: Icon(HugeIcons.strokeRoundedClock01),
                       label: 'Pomodoro',
                     ),
                     BottomNavigationBarItem(
-                      backgroundColor: AppColors.background,
+                      backgroundColor: AppConfig.background.withOpacity(0.34),
                       icon: environmentIconSound,
                       label: soundLabel,
                     ),
                     BottomNavigationBarItem(
-                      backgroundColor: AppColors.background,
-                      icon: const Icon(Icons.article),
+                      backgroundColor: AppConfig.background.withOpacity(0.34),
+                      icon: Icon(HugeIcons.strokeRoundedBook02),
                       label: 'Resumos',
                     ),
                     BottomNavigationBarItem(
-                      backgroundColor: AppColors.background,
-                      icon: const Icon(Icons.bar_chart),
+                      backgroundColor: AppConfig.background.withOpacity(0.34),
+                      icon: Icon(HugeIcons.strokeRoundedBarChart),
                       label: 'Progresso',
                     ),
                   ],

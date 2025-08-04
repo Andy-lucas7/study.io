@@ -1,8 +1,6 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../notifiers/environment_notifier.dart';
-import '../styles.dart';
+import '../core/app_config.dart';
 import '../widgets/settings_drawer.dart';
 
 class WaveAnimation extends StatefulWidget {
@@ -108,7 +106,7 @@ class EnvironmentSoundPage extends StatelessWidget {
         centerTitle: true,
         title: Text(
           'Som Ambiente',
-          style: AppFonts().montserratTitle.copyWith(),
+          style: AppConfig().montserratTitle.copyWith(),
         ),
         leading: Builder(
           builder: (context) => IconButton(
@@ -146,19 +144,19 @@ class EnvironmentSoundPage extends StatelessWidget {
                         ? Border.all(color: Colors.white, width: 2)
                         : null,
                     image: DecorationImage(
-                      image: AssetImage(EnvironmentConfig.getImage(env)),
+                      image: AssetImage(AppConfig.getImage(env)),
                       fit: BoxFit.cover,
                       colorFilter: ColorFilter.mode(
                         Colors.black.withOpacity(0.4),
                         BlendMode.darken,
                       ),
                     ),
-                    color: AppColors.tile,
+                    color: AppConfig.tile,
                   ),
                   padding: const EdgeInsets.all(16),
                     child: Text(
-                      EnvironmentConfig.getLabel(env),
-                      style: AppFonts().montserratTitle.copyWith(
+                      AppConfig.getLabel(env),
+                      style: AppConfig().montserratTitle.copyWith(
                         color: Colors.white,
                         fontSize: 18,
                         fontWeight: FontWeight.w100,

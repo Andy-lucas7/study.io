@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:study_io/core/app_config.dart';
 import '../models/task.dart';
 import 'new_task_page.dart';
-import 'package:provider/provider.dart';
 import '../services/database_service.dart';
 import '../widgets/settings_drawer.dart';
-import '../styles.dart';
-import '../notifiers/environment_notifier.dart';
-import 'dart:ui';
+import 'about_task_page.dart';
 
 class TasksPage extends StatefulWidget {
   const TasksPage({super.key});
@@ -20,21 +18,15 @@ class _TasksPageState extends State<TasksPage> {
   List<Task> _tasks = [];
   bool _showTodayOnly = true;
   bool get wantkeepAlive => true;
-  bool _isActive = true;
 
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (_isActive) {
-        _loadTasks();
-      }
-    });
+    _loadTasks();
   }
 
   @override
   void dispose() {
-    _isActive = false;
     super.dispose();
   }
 
@@ -107,7 +99,7 @@ class _TasksPageState extends State<TasksPage> {
         centerTitle: true,
         title: Text(
           'Tarefas ${_showTodayOnly ? 'do dia' : 'da Semana'}',
-          style: AppFonts().montserratTitle,
+          style: AppConfig().montserratTitle,
         ),
         leading: Builder(
           builder: (context) => IconButton(
@@ -125,7 +117,12 @@ class _TasksPageState extends State<TasksPage> {
       ),
       drawer: const SettingsDrawer(),
       body: _tasks.isEmpty
-          ? const Center(child: Text('Nenhuma tarefa disponível.'))
+          ? const Center(
+              child: Text(
+                'Nenhuma tarefa disponível.',
+                style: TextStyle(color: Colors.white),
+              ),
+            )
           : ListView.builder(
               itemCount: _tasks.length,
               itemBuilder: (context, index) {
@@ -136,6 +133,15 @@ class _TasksPageState extends State<TasksPage> {
                     vertical: 6,
                   ),
                   child: ListTile(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => AboutTaskPage(task: task),
+                        ),
+                      );
+                    },
+
                     leading: Transform.scale(
                       scale: 1.2,
                       child: Checkbox(

@@ -1,14 +1,47 @@
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 enum Environment { mute, rain, forest, coffee, white }
 
-class EnvironmentConfig {
-  static final Map<Environment, Map<String, dynamic>> _configs = {
+class AppConfig {
+  static Color background = Color.fromARGB(255, 12, 16, 19);
+  static Color tile = Color.fromARGB(65, 117, 117, 117);
+  static Color inputBackground = Color.fromARGB(255, 6, 24, 34);
+  static Color moodBackground = Color.fromARGB(255, 16, 21, 25);
+  static Color text = Colors.white;
+  static Color hintText = Colors.white70;
+  static Color border = Color.fromARGB(255, 81, 145, 194);
+  static Color splashBackground = Colors.black;
+
+  static const List<Environment> environments = Environment.values;
+  
+  final TextStyle montserratTitle = GoogleFonts.montserrat(
+    color: AppConfig.text,
+    fontSize: 24,
+    fontWeight: FontWeight.w500,
+  );
+  final TextStyle quicksandTitle = GoogleFonts.quicksand(
+    color: text,
+    fontSize: 24,
+    fontWeight: FontWeight.w300,
+  );
+  final TextStyle roboto = GoogleFonts.roboto(
+    color: text,
+    fontSize: 16,
+    fontWeight: FontWeight.w500,
+  );
+  final TextStyle pacifico = GoogleFonts.pacifico(
+    color: text,
+    fontSize: 16,
+    fontWeight: FontWeight.w500,
+  );
+
+  static final Map<Environment, Map<String, dynamic>> _environmentConfigs = {
     Environment.mute: {
       'label': 'Sem Música',
       'backgroundImage': '',
-      'image': '',
+      'image': 'assets/images/mute.png',
       'audio': '',
       'theme': ThemeData.dark().copyWith(
         colorScheme: const ColorScheme.dark(
@@ -46,9 +79,9 @@ class EnvironmentConfig {
     },
     Environment.coffee: {
       'label': 'Cafeteria',
-      'image': 'assets/images/coffee.png',
       'backgroundImage': 'assets/images/coffee_background.png',
-      'audio': 'audio/cafeteria.mp3', 
+      'image': 'assets/images/coffee.png',
+      'audio': 'audio/cafeteria.mp3',
       'theme': ThemeData.dark().copyWith(
         colorScheme: const ColorScheme.dark(
           primary: Color.fromARGB(255, 80, 55, 46),
@@ -59,8 +92,8 @@ class EnvironmentConfig {
     },
     Environment.white: {
       'label': 'White Noise',
-      'image': 'assets/images/white.png',
       'backgroundImage': 'assets/images/white_background.png',
+      'image': 'assets/images/white.png',
       'audio': 'audio/white_noise.mp3',
       'theme': ThemeData.dark().copyWith(
         colorScheme: const ColorScheme.dark(
@@ -72,11 +105,11 @@ class EnvironmentConfig {
     },
   };
 
-  static String getLabel(Environment env) => _configs[env]!['label'] as String;
-  static String getImage(Environment env) => _configs[env]!['image'] as String;
-  static String getBackgroundImage(Environment env) => _configs[env]!['backgroundImage'] as String;
-  static String getAudio(Environment env) => _configs[env]!['audio'] as String;
-  static ThemeData getTheme(Environment env) => _configs[env]!['theme'] as ThemeData;
+  static String getLabel(Environment env) => _environmentConfigs[env]!['label'] as String;
+  static String getImage(Environment env) => _environmentConfigs[env]!['image'] as String;
+  static String getBackgroundImage(Environment env) => _environmentConfigs[env]!['backgroundImage'] as String;
+  static String getAudio(Environment env) => _environmentConfigs[env]!['audio'] as String;
+  static ThemeData getTheme(Environment env) => _environmentConfigs[env]!['theme'] as ThemeData;
 }
 
 class EnvironmentNotifier extends ChangeNotifier {
@@ -113,13 +146,13 @@ class EnvironmentNotifier extends ChangeNotifier {
 
   Future<void> _startEnvironment() async {
     await _player.stop();
-    final path = EnvironmentConfig.getAudio(_environment);
+    final path = AppConfig.getAudio(_environment);
     if (path.isNotEmpty) {
       await _player.play(AssetSource(path));
     }
   }
 
-  ThemeData get currentTheme => EnvironmentConfig.getTheme(_environment);
-  String get backgroundImagePath => EnvironmentConfig.getBackgroundImage(_environment);
-  String get imagePath => EnvironmentConfig.getImage(_environment);
+  ThemeData get currentTheme => AppConfig.getTheme(_environment);
+  String get backgroundImagePath => AppConfig.getBackgroundImage(_environment);
+  String get imagePath => AppConfig.getImage(_environment);
 }

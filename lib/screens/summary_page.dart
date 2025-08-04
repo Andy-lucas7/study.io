@@ -7,10 +7,8 @@ import 'package:provider/provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:share_plus/share_plus.dart';
-import '../notifiers/theme_notifier.dart';
-import '../notifiers/environment_notifier.dart';
+import 'package:study_io/core/app_config.dart';
 import '../widgets/settings_drawer.dart';
-import 'package:study_io/styles.dart';
 
 class Summary {
   String id;
@@ -135,11 +133,7 @@ class _SummaryPageState extends State<SummaryPage> {
 
   @override
   Widget build(BuildContext context) {
-    final themeNotifier = Provider.of<ThemeNotifier>(context);
-    final currentTheme = themeNotifier.themeMode == ThemeMode.light
-        ? themeNotifier.lightTheme
-        : themeNotifier.darkTheme;
-
+    final currentTheme = Theme.of(context);
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
@@ -147,7 +141,7 @@ class _SummaryPageState extends State<SummaryPage> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
-        title: Text('Resumos', style: AppFonts().montserratTitle.copyWith()),
+        title: Text('Resumos', style: AppConfig().montserratTitle.copyWith()),
         leading: Builder(
           builder: (context) => IconButton(
             icon: Image.asset('assets/icon/Icon_fill.png'),
@@ -186,7 +180,7 @@ class _SummaryPageState extends State<SummaryPage> {
                     },
                     child: Container(
                       decoration: BoxDecoration(
-                        color: AppColors.tile,
+                        color: AppConfig.tile,
                         borderRadius: BorderRadius.circular(16),
                       ),
                       padding: const EdgeInsets.all(12),

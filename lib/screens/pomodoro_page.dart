@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:study_io/core/app_config.dart';
 import '../notifiers/pomodoro_notifier.dart';
-import '../notifiers/theme_notifier.dart';
 import '../services/database_service.dart';
-import '../models/task.dart';
 import '../widgets/settings_drawer.dart';
-import '../styles.dart';
 import 'package:intl/intl.dart';
 
 class PomodoroPage extends StatelessWidget {
@@ -58,16 +56,13 @@ class PomodoroPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final themeNotifier = context.watch<ThemeNotifier>();
     final pomodoroNotifier = context.watch<PomodoroNotifier>();
-    final currentTheme = themeNotifier.themeMode == ThemeMode.light
-        ? themeNotifier.lightTheme
-        : themeNotifier.darkTheme;
+    final currentTheme = Theme.of(context);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: Text('Timer Pomodoro', style: AppFonts().montserratTitle),
+        title: Text('Timer Pomodoro', style: AppConfig().montserratTitle),
         backgroundColor: Colors.transparent,
         centerTitle: true,
         leading: Builder(
@@ -90,29 +85,36 @@ class PomodoroPage extends StatelessWidget {
               children: [
                 Container(
                   width: MediaQuery.of(context).size.width * 0.37,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
-                    color: AppColors.tile,
+                    color: AppConfig.tile,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: DropdownButtonHideUnderline(
-                    child: 
-                    DropdownButton<String>(
+                    child: DropdownButton<String>(
                       menuWidth: 230,
                       isDense: true,
                       isExpanded: true,
                       alignment: Alignment.center,
                       borderRadius: BorderRadius.circular(20),
-                      dropdownColor: const Color.fromARGB(65, 27, 27, 27).withOpacity(0.85),
+                      dropdownColor: const Color.fromARGB(
+                        65,
+                        27,
+                        27,
+                        27,
+                      ).withOpacity(0.85),
                       value: pomodoroNotifier.selectedSession,
                       icon: Icon(
                         color: Colors.white,
                         Icons.keyboard_arrow_down_rounded,
                       ),
-                      style: AppFonts().montserratTitle.copyWith(
-                            fontSize: 16,
-                            color: Colors.white
-                          ),
+                      style: AppConfig().montserratTitle.copyWith(
+                        fontSize: 16,
+                        color: Colors.white,
+                      ),
                       onChanged: pomodoroNotifier.isRunning
                           ? null
                           : (value) {
@@ -127,9 +129,7 @@ class PomodoroPage extends StatelessWidget {
                           child: Text(
                             label,
                             textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 16,
-                            ),
+                            style: TextStyle(fontSize: 16),
                           ),
                         );
                       }).toList(),
@@ -161,9 +161,7 @@ class PomodoroPage extends StatelessWidget {
                           return Center(
                             child: Text(
                               displayLabel,
-                              style: TextStyle(
-                                fontSize: 16,
-                              ),
+                              style: TextStyle(fontSize: 16),
                             ),
                           );
                         }).toList();
@@ -181,7 +179,7 @@ class PomodoroPage extends StatelessWidget {
                 children: [
                   Text(
                     pomodoroNotifier.isFocus ? 'Modo: Foco' : 'Modo: Pausa',
-                    style: AppFonts().montserratTitle.copyWith(fontSize: 18),
+                    style: AppConfig().montserratTitle.copyWith(fontSize: 18),
                   ),
                   const SizedBox(height: 22),
                   Stack(
@@ -198,8 +196,8 @@ class PomodoroPage extends StatelessWidget {
                           valueColor: AlwaysStoppedAnimation(
                             currentTheme.colorScheme.primary,
                           ),
-                          backgroundColor:
-                              currentTheme.colorScheme.primary.withOpacity(0.3),
+                          backgroundColor: currentTheme.colorScheme.primary
+                              .withOpacity(0.3),
                           strokeCap: StrokeCap.round,
                         ),
                       ),
@@ -210,13 +208,13 @@ class PomodoroPage extends StatelessWidget {
                             pomodoroNotifier.formatDuration(
                               pomodoroNotifier.remaining,
                             ),
-                            style: AppFonts().quicksandTitle.copyWith(
-                                  fontSize: 58,
-                                  fontWeight: FontWeight.w100,
-                                ),
+                            style: AppConfig().quicksandTitle.copyWith(
+                              fontSize: 58,
+                            ),
                           ),
                           ElevatedButton(
-                            onPressed: () => _selectTask(context, pomodoroNotifier),
+                            onPressed: () =>
+                                _selectTask(context, pomodoroNotifier),
                             child: Text(
                               pomodoroNotifier.selectedTask?.title ??
                                   'Selecionar Tarefa',
@@ -240,7 +238,9 @@ class PomodoroPage extends StatelessWidget {
                       ? () {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text('Selecione uma tarefa antes de iniciar.'),
+                              content: Text(
+                                'Selecione uma tarefa antes de iniciar.',
+                              ),
                             ),
                           );
                         }
@@ -258,7 +258,8 @@ class PomodoroPage extends StatelessWidget {
                   ),
                 ),
                 ElevatedButton.icon(
-                  onPressed: pomodoroNotifier.isRunning ||
+                  onPressed:
+                      pomodoroNotifier.isRunning ||
                           pomodoroNotifier.remaining > Duration.zero
                       ? pomodoroNotifier.resetTimer
                       : null,

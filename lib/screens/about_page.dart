@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:study_io/styles.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import '../core/app_config.dart';
 
 class AboutPage extends StatelessWidget {
   const AboutPage({super.key});
@@ -18,10 +18,9 @@ class AboutPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppConfig.background,
       body: Stack(
         children: [
-          // Imagens de fundo
           SizedBox(
             height: 198,
             child: Row(
@@ -33,7 +32,6 @@ class AboutPage extends StatelessWidget {
             ),
           ),
 
-          // Gradiente escuro
           Positioned(
             top: 136,
             left: 0,
@@ -52,13 +50,11 @@ class AboutPage extends StatelessWidget {
               ),
             ),
           ),
-          // Conteúdo
           SingleChildScrollView(
             padding: const EdgeInsets.only(top: 140, left: 24, right: 24, bottom: 32),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Título estilizado
                 RichText(
                   textAlign: TextAlign.center,
                   text: TextSpan(
@@ -100,8 +96,6 @@ class AboutPage extends StatelessWidget {
                 ),
 
                 const SizedBox(height: 32),
-
-                // Botões sociais
                 Wrap(
                   spacing: 12,
                   runSpacing: 3,

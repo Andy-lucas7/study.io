@@ -42,7 +42,7 @@ class _NewTaskPageState extends State<NewTaskPage> {
       );
 
       await DatabaseService.insertTask(newTask);
-      Navigator.pop(context, true); // Retorna pra indicar sucesso
+      Navigator.pop(context, true);
     }
   }
 

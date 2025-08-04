@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:study_io/styles.dart';
-import '../notifiers/theme_notifier.dart';
-import '../notifiers/environment_notifier.dart';
+import '../core/app_config.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../screens/about_page.dart';
 
@@ -11,35 +9,11 @@ class SettingsDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final themeNotifier = Provider.of<ThemeNotifier>(context);
-    final env = context.watch<EnvironmentNotifier>();
+    final imagePath = context
+        .watch<EnvironmentNotifier>()
+        .imagePath;
 
-    final currentTheme = themeNotifier.themeMode == ThemeMode.light
-        ? themeNotifier.lightTheme
-        : themeNotifier.darkTheme;
-
-    final isDarkMode = themeNotifier.themeMode == ThemeMode.dark;
-
-    // Define a imagem de fundo com base no ambiente
-    String? drawerBackground;
-    switch (env.environment) {
-      case Environment.rain:
-        drawerBackground = 'assets/images/rain.png';
-        break;
-      case Environment.forest:
-        drawerBackground = 'assets/images/forest.png';
-        break;
-      case Environment.coffee:
-        drawerBackground = 'assets/images/coffee.png';
-        break;
-      case Environment.mute:
-        drawerBackground = 'assets/icon/banner.png';
-      case Environment.white:
-        drawerBackground = 'assets/images/white.png';
-        break;
-    }
-
-    Future<void> _goToAboutPage() async {
+    Future<void> goToAboutPage() async {
       MaterialPageRoute(builder: (_) => const AboutPage());
       Navigator.push(
         context,
@@ -48,9 +22,7 @@ class SettingsDrawer extends StatelessWidget {
     }
 
     return Drawer(
-      backgroundColor: isDarkMode
-          ? AppColors.background
-          : const Color.fromARGB(255, 255, 255, 255),
+      backgroundColor: AppConfig.background,
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
@@ -58,8 +30,11 @@ class SettingsDrawer extends StatelessWidget {
             height: 230,
             decoration: BoxDecoration(
               image: DecorationImage(
-                image: AssetImage(drawerBackground),
-                fit: BoxFit.cover,
+                image: (imagePath != 'assets/images/mute.png' && imagePath.isNotEmpty)
+                    ? AssetImage(imagePath)
+                    : AssetImage('assets/icon/banner.png'),
+                    
+                fit: BoxFit.fill,
               ),
             ),
             child: Stack(
@@ -70,7 +45,7 @@ class SettingsDrawer extends StatelessWidget {
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
-                        colors: [Colors.transparent, AppColors.background],
+                        colors: [ Color.fromARGB(0, 0, 0, 0), AppConfig.background],
                       ),
                     ),
                   ),
@@ -104,25 +79,16 @@ class SettingsDrawer extends StatelessWidget {
             ),
           ),
           ListTile(
-            onTap: _goToAboutPage,
-            leading: Icon(
-              Icons.info,
-              color: isDarkMode ? Colors.white : Colors.grey[600],
-            ),
+            onTap: goToAboutPage,
+            leading: Icon(Icons.info, color: Colors.white),
             title: Text(
               'Sobre o Study.io',
-              style: TextStyle(color: isDarkMode ? Colors.white : Colors.black),
+              style: TextStyle(color: Colors.white),
             ),
           ),
           ListTile(
-            leading: Icon(
-              Icons.logout,
-              color: isDarkMode ? Colors.white : Colors.grey[600],
-            ),
-            title: Text(
-              'Sair',
-              style: TextStyle(color: isDarkMode ? Colors.white : Colors.black),
-            ),
+            leading: Icon(Icons.logout, color: Colors.white),
+            title: Text('Sair', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),

@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../services/database_service.dart';
 import '../models/task.dart';
-import 'package:intl/intl.dart';
 
 class PomodoroNotifier extends ChangeNotifier {
   Timer? _timer;

@@ -36,7 +36,7 @@ class Task {
     return Task(
       id: map['id'],
       title: map['title'],
-      description: map['description'] ?? '',
+      description: map['description'] ?? 'Sem descrição.',
       date: map['date'],
       priority: map['priority'],
       completed: map['completed'] == 1,

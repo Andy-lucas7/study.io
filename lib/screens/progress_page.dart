@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:study_io/core/app_config.dart';
 import 'dart:ui';
-import '../notifiers/environment_notifier.dart';
-import '../notifiers/theme_notifier.dart';
 import '../services/database_service.dart';
 import '../models/task.dart';
 import '../widgets/settings_drawer.dart';
-import '../styles.dart';
 
 class ProgressPage extends StatefulWidget {
   const ProgressPage({super.key});
@@ -107,15 +105,12 @@ class _ProgressPageState extends State<ProgressPage> {
 
   @override
   Widget build(BuildContext context) {
-    final themeNotifier = Provider.of<ThemeNotifier>(context);
-    final currentTheme = themeNotifier.themeMode == ThemeMode.light
-        ? themeNotifier.lightTheme
-        : themeNotifier.darkTheme;
+    final currentTheme = Theme.of(context);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: Text('Progresso', style: AppFonts().montserratTitle),
+        title: Text('Progresso', style: AppConfig().montserratTitle),
         backgroundColor: Colors.transparent,
         centerTitle: true,
         leading: Builder(
@@ -220,7 +215,7 @@ class _ProgressPageState extends State<ProgressPage> {
               height: 200,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppColors.tile,
+                color: AppConfig.tile,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: _buildBarChart(currentTheme),
@@ -250,7 +245,7 @@ class _ProgressPageState extends State<ProgressPage> {
 
   Widget _statCard(String title, String value, IconData icon, ThemeData theme) {
     return Card(
-      color: AppColors.tile,
+      color: AppConfig.tile,
       elevation: 2,
       child: Container(
         width: 160,
