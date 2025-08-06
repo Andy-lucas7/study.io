@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/task.dart';
 import '../core/app_config.dart';
-import '../widgets/settings_drawer.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 class AboutTaskPage extends StatelessWidget {

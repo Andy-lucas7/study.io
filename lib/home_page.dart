@@ -149,7 +149,7 @@ class _HomePageState extends State<HomePage> {
                   items: [
                     BottomNavigationBarItem(
                       backgroundColor: AppConfig.background.withOpacity(0.34),
-                      icon: Icon(HugeIcons.strokeRoundedTask01, color: currentTheme.colorScheme.primary,),
+                      icon: Icon(HugeIcons.strokeRoundedTask01),
                       label: 'Tarefas',
                     ),
                     BottomNavigationBarItem(

@@ -4,6 +4,7 @@ class Summary {
   final String description;
   final String content;
   final DateTime createdAt;
+  String? audioPath;
 
   Summary({
     required this.id,

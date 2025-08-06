@@ -103,3 +103,4 @@ class DatabaseService {
     await db.delete('tasks', where: 'id = ?', whereArgs: [id]);
   }
 }
+

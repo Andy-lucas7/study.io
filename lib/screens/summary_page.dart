@@ -1,45 +1,18 @@
 import 'dart:io';
 import 'dart:convert';
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:provider/provider.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'package:study_io/models/summary.dart';
+import 'package:record/record.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:study_io/core/app_config.dart';
+import 'package:audioplayers/audioplayers.dart';
 import '../widgets/settings_drawer.dart';
 
-class Summary {
-  String id;
-  String title;
-  String description;
-  String content;
-  DateTime createdAt;
-
-  Summary({
-    required this.id,
-    required this.title,
-    required this.description,
-    required this.content,
-    required this.createdAt,
-  });
-
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    'title': title,
-    'description': description,
-    'content': content,
-    'createdAt': createdAt.toIso8601String(),
-  };
-
-  factory Summary.fromJson(Map<String, dynamic> json) => Summary(
-    id: json['id'],
-    title: json['title'],
-    description: json['description'],
-    content: json['content'],
-    createdAt: DateTime.parse(json['createdAt']),
-  );
+// Utility function for sanitizing file names
+String _sanitizeFileName(String fileName) {
+  return fileName.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_');
 }
 
 class SummaryPage extends StatefulWidget {
@@ -65,7 +38,13 @@ class _SummaryPageState extends State<SummaryPage> {
       final jsonString = await file.readAsString();
       final List<dynamic> jsonList = jsonDecode(jsonString);
       setState(() {
-        _summaries = jsonList.map((json) => Summary.fromJson(json)).toList();
+        _summaries = jsonList.map((json) {
+          final summary = Summary.fromMap(json);
+          if (json['audioPath'] != null) {
+            summary.audioPath = json['audioPath'];
+          }
+          return summary;
+        }).toList();
       });
     }
   }
@@ -73,15 +52,56 @@ class _SummaryPageState extends State<SummaryPage> {
   Future<void> _saveSummaries() async {
     final directory = await getApplicationDocumentsDirectory();
     final file = File('${directory.path}/summaries.json');
-    final jsonString = jsonEncode(_summaries.map((s) => s.toJson()).toList());
+    final jsonString = jsonEncode(_summaries.map((s) => s.toMap()).toList());
     await file.writeAsString(jsonString);
   }
 
   Future<void> _exportSummary(Summary summary) async {
-    final directory = await getApplicationDocumentsDirectory();
-    final file = File('${directory.path}/${summary.title}.txt');
-    await file.writeAsString(summary.content);
-    await Share.shareFiles([file.path], text: summary.title);
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final textFile = File(
+        '${directory.path}/${_sanitizeFileName(summary.title)}.txt',
+      );
+
+      String textContent =
+          '''Título: ${summary.title}
+Descrição: ${summary.description}
+Data de criação: ${summary.createdAt.toString()}
+
+Conteúdo:
+${summary.content}''';
+
+      await textFile.writeAsString(textContent);
+
+      List<XFile> filesToShare = [XFile(textFile.path)];
+
+      if (summary.audioPath != null &&
+          await File(summary.audioPath!).exists()) {
+        filesToShare.add(XFile(summary.audioPath!));
+      }
+
+      await Share.shareXFiles(
+        filesToShare,
+        text: 'Resumo: ${summary.title}',
+        subject: summary.title,
+      );
+
+      if (await textFile.exists()) {
+        await textFile.delete();
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Resumo compartilhado com sucesso!')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao compartilhar: $e')),
+        );
+      }
+    }
   }
 
   void _showCreateEditDialog({Summary? summary}) {
@@ -109,7 +129,9 @@ class _SummaryPageState extends State<SummaryPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Confirmar exclusão'),
-        content: const Text('Deseja apagar este resumo?'),
+        content: const Text(
+          'Deseja apagar este resumo? Esta ação não pode ser desfeita.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -128,6 +150,19 @@ class _SummaryPageState extends State<SummaryPage> {
         _summaries.removeWhere((s) => s.id == summary.id);
       });
       await _saveSummaries();
+
+      if (summary.audioPath != null) {
+        final audioFile = File(summary.audioPath!);
+        if (await audioFile.exists()) {
+          await audioFile.delete();
+        }
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Resumo apagado com sucesso')),
+        );
+      }
     }
   }
 
@@ -151,7 +186,24 @@ class _SummaryPageState extends State<SummaryPage> {
       ),
       drawer: const SettingsDrawer(),
       body: _summaries.isEmpty
-          ? const Center(child: Text('Nenhum resumo criado ainda.'))
+          ? const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.summarize, size: 64, color: Colors.grey),
+                  SizedBox(height: 16),
+                  Text(
+                    'Nenhum resumo criado ainda.',
+                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Toque no + para criar seu primeiro resumo',
+                    style: TextStyle(fontSize: 14, color: Colors.grey),
+                  ),
+                ],
+              ),
+            )
           : Padding(
               padding: const EdgeInsets.all(16),
               child: GridView.count(
@@ -161,41 +213,46 @@ class _SummaryPageState extends State<SummaryPage> {
                 childAspectRatio: 0.85,
                 children: _summaries.map((summary) {
                   return GestureDetector(
-                    onTap: () {
-                      showDialog(
-                        context: context,
-                        builder: (context) => AlertDialog(
-                          title: Text(summary.title),
-                          content: SingleChildScrollView(
-                            child: Text(summary.content),
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(context),
-                              child: const Text('Fechar'),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
+                    onTap: () => _showSummaryDetails(summary),
                     child: Container(
                       decoration: BoxDecoration(
                         color: AppConfig.tile,
                         borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
                       padding: const EdgeInsets.all(12),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            summary.title,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  summary.title.isEmpty
+                                      ? 'Sem título'
+                                      : summary.title,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              if (summary.audioPath != null)
+                                const Icon(
+                                  Icons.mic,
+                                  color: Colors.white70,
+                                  size: 16,
+                                ),
+                            ],
                           ),
                           const SizedBox(height: 8),
                           Text(
@@ -217,6 +274,7 @@ class _SummaryPageState extends State<SummaryPage> {
                                 icon: const Icon(
                                   Icons.edit,
                                   color: Colors.white70,
+                                  size: 20,
                                 ),
                                 onPressed: () =>
                                     _showCreateEditDialog(summary: summary),
@@ -225,6 +283,7 @@ class _SummaryPageState extends State<SummaryPage> {
                                 icon: const Icon(
                                   Icons.share,
                                   color: Colors.white70,
+                                  size: 20,
                                 ),
                                 onPressed: () => _exportSummary(summary),
                               ),
@@ -232,6 +291,7 @@ class _SummaryPageState extends State<SummaryPage> {
                                 icon: const Icon(
                                   Icons.delete,
                                   color: Colors.redAccent,
+                                  size: 20,
                                 ),
                                 onPressed: () => _deleteSummary(summary),
                               ),
@@ -251,6 +311,215 @@ class _SummaryPageState extends State<SummaryPage> {
       ),
     );
   }
+
+  void _showSummaryDetails(Summary summary) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return _SummaryDetailsDialog(summary: summary);
+      },
+    );
+  }
+}
+
+class _SummaryDetailsDialog extends StatefulWidget {
+  final Summary summary;
+
+  const _SummaryDetailsDialog({required this.summary});
+
+  @override
+  State<_SummaryDetailsDialog> createState() => _SummaryDetailsDialogState();
+}
+
+class _SummaryDetailsDialogState extends State<_SummaryDetailsDialog> {
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  bool _isPlaying = false;
+
+  @override
+  void dispose() {
+    if (_isPlaying) {
+      _audioPlayer.stop();
+    }
+    _audioPlayer.dispose();
+    super.dispose();
+  }
+
+  Future<void> _togglePlayback() async {
+    if (widget.summary.audioPath == null) return;
+
+    try {
+      if (_isPlaying) {
+        await _audioPlayer.pause();
+        setState(() => _isPlaying = false);
+      } else {
+        await _audioPlayer.play(DeviceFileSource(widget.summary.audioPath!));
+        setState(() => _isPlaying = true);
+        _audioPlayer.onPlayerComplete.listen((event) {
+          setState(() => _isPlaying = false);
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao reproduzir áudio: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _exportSummary() async {
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final textFile = File(
+        '${directory.path}/${_sanitizeFileName(widget.summary.title)}.txt',
+      );
+
+      String textContent =
+          '''Título: ${widget.summary.title}
+Descrição: ${widget.summary.description}
+Data de criação: ${widget.summary.createdAt.toString()}
+
+Conteúdo:
+${widget.summary.content}''';
+
+      await textFile.writeAsString(textContent);
+
+      List<XFile> filesToShare = [XFile(textFile.path)];
+
+      if (widget.summary.audioPath != null &&
+          await File(widget.summary.audioPath!).exists()) {
+        filesToShare.add(XFile(widget.summary.audioPath!));
+      }
+
+      await Share.shareXFiles(
+        filesToShare,
+        text: 'Resumo: ${widget.summary.title}',
+        subject: widget.summary.title,
+      );
+
+      if (await textFile.exists()) {
+        await textFile.delete();
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Resumo compartilhado com sucesso!')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao compartilhar: $e')),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.summary.title.isEmpty ? 'Resumo' : widget.summary.title),
+      content: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (widget.summary.description.isNotEmpty) ...[
+              const Text(
+                'Descrição:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              Text(widget.summary.description),
+              const SizedBox(height: 16),
+            ],
+            if (widget.summary.content.isNotEmpty) ...[
+              const Text(
+                'Conteúdo:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              Text(widget.summary.content),
+              const SizedBox(height: 16),
+            ],
+            if (widget.summary.audioPath != null) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.blue.shade200),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.audiotrack, color: Colors.blue.shade600),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Áudio: ${widget.summary.audioPath!.split('/').last}\nSalvo em: ${widget.summary.audioPath}',
+                            style: TextStyle(
+                              color: Colors.blue.shade600,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    ElevatedButton.icon(
+                      onPressed: _togglePlayback,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _isPlaying
+                            ? Colors.orange
+                            : Theme.of(context).colorScheme.secondary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(25),
+                        ),
+                      ),
+                      icon: Icon(_isPlaying ? Icons.pause : Icons.play_arrow),
+                      label: Text(_isPlaying ? 'Pausar' : 'Reproduzir'),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            const SizedBox(height: 16),
+            Text(
+              'Criado em: ${widget.summary.createdAt.day}/${widget.summary.createdAt.month}/${widget.summary.createdAt.year} às ${widget.summary.createdAt.hour.toString().padLeft(2, '0')}:${widget.summary.createdAt.minute.toString().padLeft(2, '0')}',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[600],
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton.icon(
+          onPressed: () {
+            Navigator.pop(context);
+            _exportSummary();
+          },
+          icon: const Icon(Icons.share),
+          label: const Text('Compartilhar'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Fechar'),
+        ),
+      ],
+    );
+  }
 }
 
 class SummaryDialog extends StatefulWidget {
@@ -264,22 +533,29 @@ class SummaryDialog extends StatefulWidget {
 }
 
 class _SummaryDialogState extends State<SummaryDialog> {
-  late stt.SpeechToText _speech;
-  bool _isListening = false;
-  String _lastRecognized = '';
-
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _contentController = TextEditingController();
+  final _audioFileNameController = TextEditingController();
+
+  final Record _audioRecorder = Record();
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  bool _isRecording = false;
+  bool _isPlaying = false;
+  String? _audioFilePath;
+  bool _hasUnsavedAudio = false;
 
   @override
   void initState() {
     super.initState();
-    _speech = stt.SpeechToText();
     if (widget.summary != null) {
       _titleController.text = widget.summary!.title;
       _descriptionController.text = widget.summary!.description;
       _contentController.text = widget.summary!.content;
+      _audioFilePath = widget.summary!.audioPath;
+      if (_audioFilePath != null) {
+        _audioFileNameController.text = _audioFilePath!.split('/').last;
+      }
     }
   }
 
@@ -288,168 +564,442 @@ class _SummaryDialogState extends State<SummaryDialog> {
     _titleController.dispose();
     _descriptionController.dispose();
     _contentController.dispose();
-    _speech.stop();
+    _audioFileNameController.dispose();
+    _stopRecordingIfActive();
+    _audioPlayer.dispose();
     super.dispose();
   }
 
-  void _toggleRecording() async {
-    var status = await Permission.microphone.request();
-    if (status != PermissionStatus.granted) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Permissão de microfone negada')),
-        );
-      }
+  Future<void> _stopRecordingIfActive() async {
+    if (_isRecording) {
+      await _audioRecorder.stop();
+    }
+    _audioRecorder.dispose();
+  }
+
+  Future<bool> _checkAudioPermission() async {
+    var status = await Permission.microphone.status;
+    if (status.isGranted) {
+      return true;
+    } else {
+      status = await Permission.microphone.request();
+      return status.isGranted;
+    }
+  }
+
+  Future<void> _toggleRecording() async {
+    final hasPermission = await _checkAudioPermission();
+    if (!hasPermission) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Permissão de microfone negada')),
+      );
       return;
     }
 
-    if (!_isListening) {
-      bool available = await _speech.initialize(
-        onStatus: (val) {
-          debugPrint('Speech status: $val');
-          if (val == 'notListening') {
-            setState(() => _isListening = false);
-          } else if (val == 'listening') {
-            setState(() => _isListening = true);
+    try {
+      if (!_isRecording) {
+        final dir = await getApplicationDocumentsDirectory();
+        final fileName = _audioFileNameController.text.trim().isEmpty
+            ? 'audio_summary_${DateTime.now().millisecondsSinceEpoch}.m4a'
+            : '${_sanitizeFileName(_audioFileNameController.text.trim())}.m4a';
+        final newAudioPath = '${dir.path}/$fileName';
+
+        if (await _audioRecorder.hasPermission()) {
+          await _audioRecorder.start(
+            path: newAudioPath,
+            encoder: AudioEncoder.aacLc,
+            bitRate: 128000,
+          );
+          setState(() {
+            _isRecording = true;
+            _audioFilePath = newAudioPath;
+            _hasUnsavedAudio = true;
+            _audioFileNameController.text = fileName;
+          });
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Row(
+                  children: [
+                    const Icon(Icons.mic, color: Colors.white),
+                    const SizedBox(width: 8),
+                    Text('Gravação iniciada em: $newAudioPath'),
+                  ],
+                ),
+                backgroundColor: Colors.green,
+                duration: const Duration(seconds: 2),
+              ),
+            );
           }
-        },
-        onError: (val) {
-          debugPrint('Speech error: $val');
-          setState(() => _isListening = false);
-        },
-      );
+        }
+      } else {
+        final path = await _audioRecorder.stop();
+        setState(() {
+          _isRecording = false;
+        });
 
-      if (available) {
-        _lastRecognized = '';
-        _speech.listen(
-          listenFor: const Duration(seconds: 20),
-          pauseFor: const Duration(seconds: 3),
-          onResult: (val) {
-            final recognized = val.recognizedWords.trim();
-            if (recognized.isEmpty || recognized == _lastRecognized) return;
-
-            final newPart = recognized.replaceFirst(_lastRecognized, '').trim();
-
-            if (newPart.isNotEmpty) {
-              _contentController.text = _contentController.text.isEmpty
-                  ? newPart
-                  : '${_contentController.text} $newPart';
-              _contentController.selection = TextSelection.fromPosition(
-                TextPosition(offset: _contentController.text.length),
-              );
-            }
-
-            _lastRecognized = recognized;
-          },
-          cancelOnError: true,
-        );
-        setState(() => _isListening = true);
+        if (path != null && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.check_circle, color: Colors.white),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text('Áudio salvo em: $path')),
+                ],
+              ),
+              backgroundColor: Colors.blue,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
       }
-    } else {
-      await _speech.stop();
-      setState(() => _isListening = false);
+    } catch (e) {
+      setState(() {
+        _isRecording = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro na gravação: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _togglePlayback() async {
+    if (_audioFilePath == null) return;
+
+    try {
+      if (_isPlaying) {
+        await _audioPlayer.pause();
+        setState(() => _isPlaying = false);
+      } else {
+        await _audioPlayer.play(DeviceFileSource(_audioFilePath!));
+        setState(() => _isPlaying = true);
+        _audioPlayer.onPlayerComplete.listen((event) {
+          setState(() => _isPlaying = false);
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao reproduzir áudio: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _deleteAudioAndContent() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirmar exclusão'),
+        content: const Text(
+          'Deseja apagar o conteúdo de texto e áudio? Esta ação não pode ser desfeita.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Apagar', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      if (_isRecording) {
+        await _audioRecorder.stop();
+        setState(() => _isRecording = false);
+      }
+
+      if (_isPlaying) {
+        await _audioPlayer.stop();
+        setState(() => _isPlaying = false);
+      }
+
+      if (_audioFilePath != null) {
+        final audioFile = File(_audioFilePath!);
+        if (await audioFile.exists()) {
+          await audioFile.delete();
+        }
+      }
+
+      setState(() {
+        _contentController.clear();
+        _audioFilePath = null;
+        _hasUnsavedAudio = false;
+        _audioFileNameController.clear();
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Conteúdo e áudio apagados'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(widget.summary == null ? 'Novo Resumo' : 'Editar Resumo'),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: _titleController,
-              decoration: const InputDecoration(labelText: 'Título'),
-            ),
-            TextField(
-              controller: _descriptionController,
-              decoration: const InputDecoration(labelText: 'Descrição'),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: _toggleRecording,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _isListening
-                    ? Colors.red
-                    : Theme.of(context).colorScheme.primary,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 32,
-                  vertical: 16,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
+    return WillPopScope(
+      onWillPop: () async {
+        if (_isRecording) {
+          await _audioRecorder.stop();
+          setState(() => _isRecording = false);
+        }
+        if (_isPlaying) {
+          await _audioPlayer.stop();
+          setState(() => _isPlaying = false);
+        }
+        return true;
+      },
+      child: AlertDialog(
+        title: Text(widget.summary == null ? 'Novo Resumo' : 'Editar Resumo'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(
+                controller: _titleController,
+                decoration: const InputDecoration(
+                  labelText: 'Título',
+                  border: OutlineInputBorder(),
                 ),
               ),
-              icon: Icon(
-                _isListening ? Icons.stop : Icons.mic,
-                color: Colors.white,
+              const SizedBox(height: 16),
+              TextField(
+                controller: _descriptionController,
+                decoration: const InputDecoration(
+                  labelText: 'Descrição (opcional)',
+                  border: OutlineInputBorder(),
+                ),
               ),
-              label: Text(
-                _isListening ? 'Parar' : 'Gravar',
-                style: const TextStyle(color: Colors.white),
+              const SizedBox(height: 20),
+              TextField(
+                controller: _audioFileNameController,
+                decoration: const InputDecoration(
+                  labelText: 'Nome do arquivo de áudio (opcional)',
+                  border: OutlineInputBorder(),
+                  hintText: 'Ex: resumo_audio',
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _contentController,
-              decoration: const InputDecoration(labelText: 'Conteúdo'),
-              maxLines: 5,
-            ),
-            const SizedBox(height: 8),
-            TextButton.icon(
-              onPressed: () {
-                setState(() {
-                  _contentController.clear();
-                });
-              },
-              icon: const Icon(Icons.delete, color: Colors.red),
-              label: const Text(
-                'Apagar conteúdo',
-                style: TextStyle(color: Colors.red),
+              const SizedBox(height: 20),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: _isRecording
+                      ? Colors.red.shade50
+                      : Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: _isRecording
+                        ? Colors.red.shade200
+                        : Colors.blue.shade200,
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Icon(
+                      _isRecording ? Icons.mic : Icons.mic_none,
+                      size: 32,
+                      color: _isRecording ? Colors.red : Colors.blue,
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ElevatedButton.icon(
+                          onPressed: _toggleRecording,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _isRecording
+                                ? Colors.red
+                                : Theme.of(context).colorScheme.primary,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(25),
+                            ),
+                          ),
+                          icon: Icon(_isRecording ? Icons.stop : Icons.mic),
+                          label: Text(
+                            _isRecording ? 'Parar gravação' : 'Gravar áudio',
+                          ),
+                        ),
+                        if (_audioFilePath != null) ...[
+                          const SizedBox(width: 8),
+                          ElevatedButton.icon(
+                            onPressed: _togglePlayback,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: _isPlaying
+                                  ? Colors.orange
+                                  : Theme.of(context).colorScheme.secondary,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(25),
+                              ),
+                            ),
+                            icon: Icon(_isPlaying ? Icons.pause : Icons.play_arrow),
+                            label: Text(_isPlaying ? 'Pausar' : 'Reproduzir'),
+                          ),
+                        ],
+                      ],
+                    ),
+                    if (_audioFilePath != null) ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.green.shade100,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.audiotrack,
+                              color: Colors.green.shade700,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Áudio: ${_audioFilePath!.split('/').last}\nSalvo em: $_audioFilePath',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.green.shade700,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 2,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: 20),
+              TextField(
+                controller: _contentController,
+                decoration: const InputDecoration(
+                  labelText: 'Conteúdo (texto)',
+                  border: OutlineInputBorder(),
+                  alignLabelWithHint: true,
+                ),
+                maxLines: 5,
+              ),
+              const SizedBox(height: 16),
+              if (_contentController.text.isNotEmpty || _audioFilePath != null)
+                SizedBox(
+                  width: double.infinity,
+                  child: TextButton.icon(
+                    onPressed: _deleteAudioAndContent,
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.red,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    icon: const Icon(Icons.delete_sweep),
+                    label: const Text('Limpar conteúdo e áudio'),
+                  ),
+                ),
+            ],
+          ),
         ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () async {
-            if (_isListening) {
-              await _speech.stop();
-              setState(() => _isListening = false);
-            }
-            Navigator.pop(context);
-          },
-          child: const Text('Cancelar'),
-        ),
-        TextButton(
-          onPressed: () {
-            if (_titleController.text.isEmpty ||
-                _contentController.text.isEmpty) {
+        actions: [
+          TextButton(
+            onPressed: () async {
+              if (_isRecording) {
+                await _audioRecorder.stop();
+                setState(() => _isRecording = false);
+              }
+              if (_isPlaying) {
+                await _audioPlayer.stop();
+                setState(() => _isPlaying = false);
+              }
+              Navigator.pop(context);
+            },
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (_titleController.text.trim().isEmpty &&
+                  _contentController.text.trim().isEmpty &&
+                  _audioFilePath == null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'Insira pelo menos um título, texto ou grave um áudio',
+                    ),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+                return;
+              }
+
+              if (_isRecording) {
+                await _audioRecorder.stop();
+                setState(() => _isRecording = false);
+              }
+
+              if (_isPlaying) {
+                await _audioPlayer.stop();
+                setState(() => _isPlaying = false);
+              }
+
+              final newSummary = Summary(
+                id: widget.summary?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
+                title: _titleController.text.trim().isEmpty
+                    ? 'Resumo ${DateTime.now().day}/${DateTime.now().month}'
+                    : _titleController.text.trim(),
+                description: _descriptionController.text.trim(),
+                content: _contentController.text.trim(),
+                createdAt: widget.summary?.createdAt ?? DateTime.now(),
+              );
+
+              newSummary.audioPath = _audioFilePath;
+
+              widget.onSave(newSummary);
+              Navigator.pop(context);
+
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Título e conteúdo são obrigatórios'),
+                SnackBar(
+                  content: Text(
+                    widget.summary == null
+                        ? 'Resumo criado com sucesso!'
+                        : 'Resumo atualizado com sucesso!',
+                  ),
+                  backgroundColor: Colors.green,
                 ),
               );
-              return;
-            }
-
-            final newSummary = Summary(
-              id: widget.summary?.id ?? DateTime.now().toIso8601String(),
-              title: _titleController.text,
-              description: _descriptionController.text,
-              content: _contentController.text,
-              createdAt: widget.summary?.createdAt ?? DateTime.now(),
-            );
-
-            widget.onSave(newSummary);
-            Navigator.pop(context);
-          },
-          child: const Text('Salvar'),
-        ),
-      ],
+            },
+            child: const Text('Salvar'),
+          ),
+        ],
+      ),
     );
   }
 }
