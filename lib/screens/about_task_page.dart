@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/task.dart';
 import '../core/app_config.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:intl/intl.dart';
 
 class AboutTaskPage extends StatelessWidget {
   final Task task;
@@ -35,6 +36,16 @@ class AboutTaskPage extends StatelessWidget {
     }
   }
 
+  String _getHourPeriod(DateTime? start, DateTime? end) {
+    if (task.startTime != null && task.endTime != null) {
+      final startTime = DateFormat('H:mm a').format(task.startTime!);
+      final endTime = DateFormat('H:mm a').format(task.endTime!);
+      return '$startTime - $endTime';
+    } else {
+      return 'Horário não definido';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = context.watch<EnvironmentNotifier>().currentTheme;
@@ -47,7 +58,7 @@ class AboutTaskPage extends StatelessWidget {
         title: Text('Detalhes da Tarefa', style: AppConfig().montserratTitle),
         leading: Builder(
           builder: (context) => IconButton(
-            icon: Icon(HugeIcons.strokeRoundedArrowLeft01, size: 34,),
+            icon: Icon(HugeIcons.strokeRoundedArrowLeft01, size: 34),
             onPressed: () => Navigator.pop(context),
           ),
         ),
@@ -60,26 +71,26 @@ class AboutTaskPage extends StatelessWidget {
             const SizedBox(height: 20),
             Text(
               task.title,
-              style: AppConfig().quicksandTitle.copyWith(fontSize: 22),
+              style: AppConfig().quicksandTitle.copyWith(fontSize: 34),
             ),
             const SizedBox(height: 12),
-            Text(task.description, style: AppConfig().roboto),
-            const SizedBox(height: 20),
+            Text(task.description, style: AppConfig().montserratTitle.copyWith(fontSize: 18)),
+            const SizedBox(height: 24),
             Row(
               children: [
                 Icon(
-                  Icons.calendar_today,
+                  HugeIcons.strokeRoundedCalendar04,
                   size: 18,
                   color: theme.colorScheme.primary,
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Prazo: ${task.date.isNotEmpty ? task.date : 'Sem prazo'}',
+                  'Data: ${DateFormat('dd/MM/yyyy').format(task.date)}',
                   style: AppConfig().roboto,
                 ),
               ],
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             Row(
               children: [
                 Icon(
@@ -96,6 +107,7 @@ class AboutTaskPage extends StatelessWidget {
                 ),
               ],
             ),
+            const SizedBox(height: 12),
             Row(
               children: [
                 Icon(
@@ -106,6 +118,21 @@ class AboutTaskPage extends StatelessWidget {
                 const SizedBox(width: 8),
                 Text(
                   'Prioridade: ${_getPriorityText(task.priority)}',
+                  style: AppConfig().roboto,
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Icon(
+                  HugeIcons.strokeRoundedTime03,
+                  size: 18,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Periodo: ${_getHourPeriod(task.startTime, task.endTime)}',
                   style: AppConfig().roboto,
                 ),
               ],

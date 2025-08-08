@@ -100,6 +100,10 @@ class EnvironmentSoundPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
+        bottom: PreferredSize(
+          preferredSize: Size.fromHeight(12),
+          child: Container(),
+        ),
         automaticallyImplyLeading: false,
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -154,16 +158,16 @@ class EnvironmentSoundPage extends StatelessWidget {
                     color: AppConfig.tile,
                   ),
                   padding: const EdgeInsets.all(16),
-                    child: Text(
-                      AppConfig.getLabel(env),
-                      style: AppConfig().montserratTitle.copyWith(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w100,
-                      ),
+                  child: Text(
+                    AppConfig.getLabel(env),
+                    style: AppConfig().montserratTitle.copyWith(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w100,
                     ),
                   ),
                 ),
+              ),
             );
           }).toList(),
         ),

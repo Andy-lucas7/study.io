@@ -46,7 +46,9 @@ class PomodoroNotifier extends ChangeNotifier {
   void setSession(String session) {
     if (_selectedSession != session && !_isRunning) {
       _selectedSession = session;
-      _remaining = _isFocus ? _focusDurations[session]! : _breakDurations[session]!;
+      _remaining = _isFocus
+          ? _focusDurations[session]!
+          : _breakDurations[session]!;
       notifyListeners();
     }
   }
@@ -78,8 +80,8 @@ class PomodoroNotifier extends ChangeNotifier {
       final endTime = DateTime.now();
       await DatabaseService.updateTaskTime(
         _selectedTask!.id!,
-        _sessionStartTime,
-        endTime,
+        _sessionStartTime?.millisecondsSinceEpoch,
+        endTime.millisecondsSinceEpoch,
       );
     }
     _isFocus = !_isFocus;
@@ -98,10 +100,16 @@ class PomodoroNotifier extends ChangeNotifier {
     if (_isRunning) {
       _timer?.cancel();
       if (_isFocus && _selectedTask != null) {
+        // Aqui você precisa passar o tempo gasto nessa sessão, que pode ser calculado
+        final nowMillis = DateTime.now().millisecondsSinceEpoch;
+        final startMillis =
+            _sessionStartTime?.millisecondsSinceEpoch ?? nowMillis;
+        final elapsedMillis = nowMillis - startMillis;
+
         DatabaseService.updateTaskTime(
           _selectedTask!.id!,
-          _sessionStartTime,
-          DateTime.now(),
+          null, // Se quiser atualizar pomodoroCount, passe o valor aqui, ou null para não alterar
+          elapsedMillis ~/ 1000, // tempo em segundos
         );
       }
       _isRunning = false;

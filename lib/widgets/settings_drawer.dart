@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:study_io/screens/splash_page.dart';
 import '../core/app_config.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../screens/about_page.dart';
+import 'package:hugeicons/hugeicons.dart';
 
 class SettingsDrawer extends StatelessWidget {
   const SettingsDrawer({super.key});
@@ -18,6 +20,14 @@ class SettingsDrawer extends StatelessWidget {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => const AboutPage()),
+      );
+    }
+
+    Future<void> goToSplashPage() async {
+      MaterialPageRoute(builder: (_) => const SplashPage());
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const SplashPage()),
       );
     }
 
@@ -68,6 +78,7 @@ class SettingsDrawer extends StatelessWidget {
                           '.io',
                           style: GoogleFonts.montserrat(
                             color: Colors.white,
+                            fontWeight: FontWeight.w300,
                             fontSize: 50,
                           ),
                         ),
@@ -80,14 +91,15 @@ class SettingsDrawer extends StatelessWidget {
           ),
           ListTile(
             onTap: goToAboutPage,
-            leading: Icon(Icons.info, color: Colors.white),
+            leading: Icon(HugeIcons.strokeRoundedInformationCircle, color: Colors.white),
             title: Text(
               'Sobre o Study.io',
               style: TextStyle(color: Colors.white),
             ),
           ),
           ListTile(
-            leading: Icon(Icons.logout, color: Colors.white),
+            onTap: goToSplashPage,
+            leading: Icon(HugeIcons.strokeRoundedLogout01, color: Colors.white),
             title: Text('Sair', style: TextStyle(color: Colors.white)),
           ),
         ],

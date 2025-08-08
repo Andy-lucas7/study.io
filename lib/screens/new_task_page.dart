@@ -58,14 +58,25 @@ class _NewTaskPageState extends State<NewTaskPage> {
     }
   }
 
+  DateTime? _combineDateWithTime(DateTime date, TimeOfDay? time) {
+    if (time == null) return null;
+    return DateTime(date.year, date.month, date.day, time.hour, time.minute);
+  }
+
   Future<void> _saveTask() async {
     if (_formKey.currentState!.validate()) {
+      final startDateTime = _combineDateWithTime(_selectedDate, _startTime);
+      final endDateTime = _combineDateWithTime(_selectedDate, _endTime);
+
       final newTask = Task(
         title: _titleController.text,
         description: _descriptionController.text,
-        date: DateFormat('yyyy-MM-dd').format(_selectedDate),
+        date: _selectedDate,
         priority: _priority,
+        startTime: startDateTime,
+        endTime: endDateTime,
       );
+
       await DatabaseService.insertTask(newTask);
       Navigator.pop(context, true);
     }

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:study_io/screens/new_task_page.dart';
 import 'package:study_io/widgets/settings_drawer.dart';
+import 'package:hugeicons/hugeicons.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../models/task.dart';
 import '../services/database_service.dart';
@@ -42,8 +44,7 @@ class _TasksPageState extends State<TasksPage> {
 
       // Organiza as tarefas por data
       for (var task in tasks) {
-        final taskDate = DateTime.parse(task.date);
-        final day = DateTime(taskDate.year, taskDate.month, taskDate.day);
+        final day = DateTime(task.date.year, task.date.month, task.date.day);
         eventMap.putIfAbsent(day, () => []).add(task);
       }
 
@@ -92,6 +93,14 @@ class _TasksPageState extends State<TasksPage> {
 
   Widget _buildTaskItem(Task task, int index) {
     final currentTheme = Theme.of(context);
+    String hourPeriod = '';
+    if (task.startTime != null && task.endTime != null) {
+      final startTime = DateFormat('H:mm').format(task.startTime!);
+      final endTime = DateFormat('H:mm').format(task.endTime!);
+      hourPeriod = '$startTime - $endTime';
+    } else {
+      hourPeriod = 'Horário não definido';
+    }
     return GestureDetector(
       onTap: () async {
         final result = await Navigator.push(
@@ -110,7 +119,6 @@ class _TasksPageState extends State<TasksPage> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
             color: Colors.white.withOpacity(0.1),
-            border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
           ),
           child: ListTile(
             contentPadding: const EdgeInsets.symmetric(
@@ -136,19 +144,16 @@ class _TasksPageState extends State<TasksPage> {
                   )
                 : null,
             leading: Container(
-              width: 50,
+              height: 35,
+              width: 85,
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(10),
                 color: currentTheme.colorScheme.primary,
               ),
               child: Text(
-                task.startTime.toString(),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                ),
+                hourPeriod,
+                style: AppConfig().roboto.copyWith(fontSize: 10),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -175,7 +180,7 @@ class _TasksPageState extends State<TasksPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.task_outlined,
+              HugeIcons.strokeRoundedTaskDone01,
               size: 64,
               color: Colors.white.withOpacity(0.5),
             ),
@@ -211,6 +216,10 @@ class _TasksPageState extends State<TasksPage> {
       backgroundColor: Colors.transparent,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
+        bottom: PreferredSize(
+          preferredSize: Size.fromHeight(12),
+          child: Container(),
+        ),
         title: Text("Tarefas", style: AppConfig().montserratTitle),
         centerTitle: true,
         elevation: 0,
@@ -261,19 +270,20 @@ class _TasksPageState extends State<TasksPage> {
                   });
                 },
                 daysOfWeekStyle: DaysOfWeekStyle(
-                  weekdayStyle: TextStyle(
-                    color: Colors.white70,
-                  ),
+                  weekdayStyle: TextStyle(color: Colors.white70),
                   weekendStyle: TextStyle(
-                    color: currentTheme.colorScheme.primary
-                  )
+                    color: currentTheme.colorScheme.primary,
+                  ),
                 ),
                 calendarStyle: CalendarStyle(
                   outsideDaysVisible: false,
                   todayDecoration: BoxDecoration(
                     color: currentTheme.colorScheme.secondary.withOpacity(0.4),
                     shape: BoxShape.circle,
-                    border: Border.all(color: currentTheme.colorScheme.primary.withOpacity(0.3), width: 2.3)
+                    border: Border.all(
+                      color: currentTheme.colorScheme.primary.withOpacity(0.3),
+                      width: 2.3,
+                    ),
                   ),
                   selectedDecoration: const BoxDecoration(
                     color: Colors.white,
@@ -284,7 +294,7 @@ class _TasksPageState extends State<TasksPage> {
                     fontWeight: FontWeight.bold,
                   ),
                   defaultTextStyle: const TextStyle(color: Colors.white),
-                  weekendTextStyle:  TextStyle(color: Colors.white70),
+                  weekendTextStyle: TextStyle(color: Colors.white70),
                   markerDecoration: BoxDecoration(
                     color: currentTheme.colorScheme.onPrimary,
                     shape: BoxShape.circle,
@@ -319,7 +329,6 @@ class _TasksPageState extends State<TasksPage> {
               ),
             ),
 
-            // Tasks list
             Expanded(
               child: _isLoading
                   ? const Center(
@@ -343,7 +352,10 @@ class _TasksPageState extends State<TasksPage> {
       floatingActionButton: FloatingActionButton(
         onPressed: () => _goToNewTaskPage(),
         backgroundColor: currentTheme.colorScheme.primary,
-        child: const Icon(Icons.add, color: Colors.white),
+        child: const Icon(
+          HugeIcons.strokeRoundedTaskAdd01,
+          color: Colors.white,
+        ),
       ),
     );
   }

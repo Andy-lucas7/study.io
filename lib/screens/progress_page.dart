@@ -58,7 +58,7 @@ class _ProgressPageState extends State<ProgressPage> {
       (sum, task) => sum + task.getStudyMinutes(),
     );
     final weekTasks = allTasks.where((task) {
-      final taskDate = DateTime.parse(task.date);
+      final taskDate = task.date;
       return taskDate.isAfter(startOfWeek.subtract(const Duration(days: 1))) &&
           taskDate.isBefore(startOfWeek.add(const Duration(days: 7)));
     }).toList();
@@ -108,6 +108,10 @@ class _ProgressPageState extends State<ProgressPage> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
+        bottom: PreferredSize(
+          preferredSize: Size.fromHeight(12),
+          child: Container(),
+        ),
         title: Text('Progresso', style: AppConfig().montserratTitle),
         backgroundColor: Colors.transparent,
         centerTitle: true,

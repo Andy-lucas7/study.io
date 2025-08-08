@@ -1,16 +1,18 @@
-import 'dart:io';
 import 'dart:convert';
+import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:study_io/models/summary.dart';
 import 'package:record/record.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:study_io/core/app_config.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../widgets/settings_drawer.dart';
+import '../models/summary.dart';
 
-// Utility function for sanitizing file names
 String _sanitizeFileName(String fileName) {
   return fileName.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_');
 }
@@ -32,37 +34,63 @@ class _SummaryPageState extends State<SummaryPage> {
   }
 
   Future<void> _loadSummaries() async {
-    final directory = await getApplicationDocumentsDirectory();
-    final file = File('${directory.path}/summaries.json');
-    if (await file.exists()) {
-      final jsonString = await file.readAsString();
-      final List<dynamic> jsonList = jsonDecode(jsonString);
-      setState(() {
-        _summaries = jsonList.map((json) {
-          final summary = Summary.fromMap(json);
-          if (json['audioPath'] != null) {
-            summary.audioPath = json['audioPath'];
-          }
-          return summary;
-        }).toList();
-      });
+    if (kIsWeb) {
+      final prefs = await SharedPreferences.getInstance();
+      final jsonString = prefs.getString('summaries');
+      if (jsonString != null) {
+        final List<dynamic> jsonList = jsonDecode(jsonString);
+        setState(() {
+          _summaries = jsonList.map((json) {
+            final summary = Summary.fromDoc(json);
+            if (json['audioPath'] != null) {
+              summary.audioPath = json['audioPath'];
+            }
+            return summary;
+          }).toList();
+        });
+      }
+    } else {
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File('${directory.path}/summaries.json');
+      if (await file.exists()) {
+        final jsonString = await file.readAsString();
+        final List<dynamic> jsonList = jsonDecode(jsonString);
+        setState(() {
+          _summaries = jsonList.map((json) {
+            final summary = Summary.fromDoc(json);
+            if (json['audioPath'] != null) {
+              summary.audioPath = json['audioPath'];
+            }
+            return summary;
+          }).toList();
+        });
+      }
     }
   }
 
   Future<void> _saveSummaries() async {
-    final directory = await getApplicationDocumentsDirectory();
-    final file = File('${directory.path}/summaries.json');
-    final jsonString = jsonEncode(_summaries.map((s) => s.toMap()).toList());
-    await file.writeAsString(jsonString);
+    if (kIsWeb) {
+      final prefs = await SharedPreferences.getInstance();
+      final jsonString = jsonEncode(_summaries.map((s) => s.toMap()).toList());
+      await prefs.setString('summaries', jsonString);
+    } else {
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File('${directory.path}/summaries.json');
+      final jsonString = jsonEncode(_summaries.map((s) => s.toMap()).toList());
+      await file.writeAsString(jsonString);
+    }
   }
 
   Future<void> _exportSummary(Summary summary) async {
     try {
-      final directory = await getApplicationDocumentsDirectory();
-      final textFile = File(
-        '${directory.path}/${_sanitizeFileName(summary.title)}.txt',
-      );
-
+      String textFilePath;
+      if (kIsWeb) {
+        textFilePath = 'summary_${_sanitizeFileName(summary.title)}.txt';
+      } else {
+        final directory = await getApplicationDocumentsDirectory();
+        textFilePath =
+            '${directory.path}/${_sanitizeFileName(summary.title)}.txt';
+      }
       String textContent =
           '''Título: ${summary.title}
 Descrição: ${summary.description}
@@ -70,24 +98,27 @@ Data de criação: ${summary.createdAt.toString()}
 
 Conteúdo:
 ${summary.content}''';
-
-      await textFile.writeAsString(textContent);
-
-      List<XFile> filesToShare = [XFile(textFile.path)];
+      List<XFile> filesToShare = [];
+      if (!kIsWeb) {
+        final textFile = File(textFilePath);
+        await textFile.writeAsString(textContent);
+        filesToShare.add(XFile(textFilePath));
+      }
 
       if (summary.audioPath != null &&
+          !kIsWeb &&
           await File(summary.audioPath!).exists()) {
         filesToShare.add(XFile(summary.audioPath!));
       }
 
       await Share.shareXFiles(
         filesToShare,
-        text: 'Resumo: ${summary.title}',
+        text: kIsWeb ? textContent : 'Resumo: ${summary.title}',
         subject: summary.title,
       );
 
-      if (await textFile.exists()) {
-        await textFile.delete();
+      if (!kIsWeb && await File(textFilePath).exists()) {
+        await File(textFilePath).delete();
       }
 
       if (mounted) {
@@ -97,9 +128,9 @@ ${summary.content}''';
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao compartilhar: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erro ao compartilhar: $e')));
       }
     }
   }
@@ -151,7 +182,7 @@ ${summary.content}''';
       });
       await _saveSummaries();
 
-      if (summary.audioPath != null) {
+      if (summary.audioPath != null && !kIsWeb) {
         final audioFile = File(summary.audioPath!);
         if (await audioFile.exists()) {
           await audioFile.delete();
@@ -172,6 +203,10 @@ ${summary.content}''';
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
+        bottom: PreferredSize(
+          preferredSize: Size.fromHeight(12),
+          child: Container(),
+        ),
         automaticallyImplyLeading: false,
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -307,7 +342,7 @@ ${summary.content}''';
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showCreateEditDialog(),
         backgroundColor: currentTheme.colorScheme.primary,
-        child: const Icon(Icons.add, color: Colors.white),
+        child: const Icon(HugeIcons.strokeRoundedNoteAdd, color: Colors.white),
       ),
     );
   }
@@ -345,7 +380,14 @@ class _SummaryDetailsDialogState extends State<_SummaryDetailsDialog> {
   }
 
   Future<void> _togglePlayback() async {
-    if (widget.summary.audioPath == null) return;
+    if (widget.summary.audioPath == null || kIsWeb) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Reprodução de áudio não suportada no web'),
+        ),
+      );
+      return;
+    }
 
     try {
       if (_isPlaying) {
@@ -372,10 +414,14 @@ class _SummaryDetailsDialogState extends State<_SummaryDetailsDialog> {
 
   Future<void> _exportSummary() async {
     try {
-      final directory = await getApplicationDocumentsDirectory();
-      final textFile = File(
-        '${directory.path}/${_sanitizeFileName(widget.summary.title)}.txt',
-      );
+      String textFilePath;
+      if (kIsWeb) {
+        textFilePath = 'summary_${_sanitizeFileName(widget.summary.title)}.txt';
+      } else {
+        final directory = await getApplicationDocumentsDirectory();
+        textFilePath =
+            '${directory.path}/${_sanitizeFileName(widget.summary.title)}.txt';
+      }
 
       String textContent =
           '''Título: ${widget.summary.title}
@@ -385,23 +431,27 @@ Data de criação: ${widget.summary.createdAt.toString()}
 Conteúdo:
 ${widget.summary.content}''';
 
-      await textFile.writeAsString(textContent);
-
-      List<XFile> filesToShare = [XFile(textFile.path)];
+      List<XFile> filesToShare = [];
+      if (!kIsWeb) {
+        final textFile = File(textFilePath);
+        await textFile.writeAsString(textContent);
+        filesToShare.add(XFile(textFilePath));
+      }
 
       if (widget.summary.audioPath != null &&
+          !kIsWeb &&
           await File(widget.summary.audioPath!).exists()) {
         filesToShare.add(XFile(widget.summary.audioPath!));
       }
 
       await Share.shareXFiles(
         filesToShare,
-        text: 'Resumo: ${widget.summary.title}',
+        text: kIsWeb ? textContent : 'Resumo: ${widget.summary.title}',
         subject: widget.summary.title,
       );
 
-      if (await textFile.exists()) {
-        await textFile.delete();
+      if (!kIsWeb && await File(textFilePath).exists()) {
+        await File(textFilePath).delete();
       }
 
       if (mounted) {
@@ -411,9 +461,9 @@ ${widget.summary.content}''';
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao compartilhar: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erro ao compartilhar: $e')));
       }
     }
   }
@@ -421,7 +471,9 @@ ${widget.summary.content}''';
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(widget.summary.title.isEmpty ? 'Resumo' : widget.summary.title),
+      title: Text(
+        widget.summary.title.isEmpty ? 'Resumo' : widget.summary.title,
+      ),
       content: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -469,25 +521,27 @@ ${widget.summary.content}''';
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    ElevatedButton.icon(
-                      onPressed: _togglePlayback,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _isPlaying
-                            ? Colors.orange
-                            : Theme.of(context).colorScheme.secondary,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
+                    if (!kIsWeb) ...[
+                      const SizedBox(height: 8),
+                      ElevatedButton.icon(
+                        onPressed: _togglePlayback,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _isPlaying
+                              ? Colors.orange
+                              : Theme.of(context).colorScheme.secondary,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(25),
+                          ),
                         ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(25),
-                        ),
+                        icon: Icon(_isPlaying ? Icons.pause : Icons.play_arrow),
+                        label: Text(_isPlaying ? 'Pausar' : 'Reproduzir'),
                       ),
-                      icon: Icon(_isPlaying ? Icons.pause : Icons.play_arrow),
-                      label: Text(_isPlaying ? 'Pausar' : 'Reproduzir'),
-                    ),
+                    ],
                   ],
                 ),
               ),
@@ -578,6 +632,9 @@ class _SummaryDialogState extends State<SummaryDialog> {
   }
 
   Future<bool> _checkAudioPermission() async {
+    if (kIsWeb) {
+      return true; // Web não requer permissão explícita para microfone em HTTPS
+    }
     var status = await Permission.microphone.status;
     if (status.isGranted) {
       return true;
@@ -588,10 +645,37 @@ class _SummaryDialogState extends State<SummaryDialog> {
   }
 
   Future<void> _toggleRecording() async {
+    if (kIsWeb) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Aviso'),
+          content: const Text('Gravação de áudio não suportada no web.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
     final hasPermission = await _checkAudioPermission();
     if (!hasPermission) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Permissão de microfone negada')),
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Permissão Negada'),
+          content: const Text('Permissão de microfone negada.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
       );
       return;
     }
@@ -671,7 +755,22 @@ class _SummaryDialogState extends State<SummaryDialog> {
   }
 
   Future<void> _togglePlayback() async {
-    if (_audioFilePath == null) return;
+    if (_audioFilePath == null || kIsWeb) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Aviso'),
+          content: const Text('Reprodução de áudio não suportada no web.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
 
     try {
       if (_isPlaying) {
@@ -728,7 +827,7 @@ class _SummaryDialogState extends State<SummaryDialog> {
         setState(() => _isPlaying = false);
       }
 
-      if (_audioFilePath != null) {
+      if (_audioFilePath != null && !kIsWeb) {
         final audioFile = File(_audioFilePath!);
         if (await audioFile.exists()) {
           await audioFile.delete();
@@ -790,68 +889,47 @@ class _SummaryDialogState extends State<SummaryDialog> {
                 ),
               ),
               const SizedBox(height: 20),
-              TextField(
-                controller: _audioFileNameController,
-                decoration: const InputDecoration(
-                  labelText: 'Nome do arquivo de áudio (opcional)',
-                  border: OutlineInputBorder(),
-                  hintText: 'Ex: resumo_audio',
-                ),
-              ),
-              const SizedBox(height: 20),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: _isRecording
-                      ? Colors.red.shade50
-                      : Colors.blue.shade50,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: _isRecording
-                        ? Colors.red.shade200
-                        : Colors.blue.shade200,
+              if (!kIsWeb) ...[
+                TextField(
+                  controller: _audioFileNameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Nome do arquivo de áudio (opcional)',
+                    border: OutlineInputBorder(),
+                    hintText: 'Ex: resumo_audio',
                   ),
                 ),
-                child: Column(
-                  children: [
-                    Icon(
-                      _isRecording ? Icons.mic : Icons.mic_none,
-                      size: 32,
-                      color: _isRecording ? Colors.red : Colors.blue,
+                const SizedBox(height: 20),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: _isRecording
+                        ? Colors.red.shade50
+                        : Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: _isRecording
+                          ? Colors.red.shade200
+                          : Colors.blue.shade200,
                     ),
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        ElevatedButton.icon(
-                          onPressed: _toggleRecording,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: _isRecording
-                                ? Colors.red
-                                : Theme.of(context).colorScheme.primary,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(25),
-                            ),
-                          ),
-                          icon: Icon(_isRecording ? Icons.stop : Icons.mic),
-                          label: Text(
-                            _isRecording ? 'Parar gravação' : 'Gravar áudio',
-                          ),
-                        ),
-                        if (_audioFilePath != null) ...[
-                          const SizedBox(width: 8),
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(
+                        _isRecording ? Icons.mic : Icons.mic_none,
+                        size: 32,
+                        color: _isRecording ? Colors.red : Colors.blue,
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
                           ElevatedButton.icon(
-                            onPressed: _togglePlayback,
+                            onPressed: _toggleRecording,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: _isPlaying
-                                  ? Colors.orange
-                                  : Theme.of(context).colorScheme.secondary,
+                              backgroundColor: _isRecording
+                                  ? Colors.red
+                                  : Theme.of(context).colorScheme.primary,
                               foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 16,
@@ -861,47 +939,72 @@ class _SummaryDialogState extends State<SummaryDialog> {
                                 borderRadius: BorderRadius.circular(25),
                               ),
                             ),
-                            icon: Icon(_isPlaying ? Icons.pause : Icons.play_arrow),
-                            label: Text(_isPlaying ? 'Pausar' : 'Reproduzir'),
-                          ),
-                        ],
-                      ],
-                    ),
-                    if (_audioFilePath != null) ...[
-                      const SizedBox(height: 8),
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.green.shade100,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.audiotrack,
-                              color: Colors.green.shade700,
-                              size: 16,
+                            icon: Icon(_isRecording ? Icons.stop : Icons.mic),
+                            label: Text(
+                              _isRecording ? 'Parar gravação' : 'Gravar áudio',
                             ),
+                          ),
+                          if (_audioFilePath != null) ...[
                             const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Áudio: ${_audioFilePath!.split('/').last}\nSalvo em: $_audioFilePath',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.green.shade700,
-                                  fontWeight: FontWeight.w500,
+                            ElevatedButton.icon(
+                              onPressed: _togglePlayback,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: _isPlaying
+                                    ? Colors.orange
+                                    : Theme.of(context).colorScheme.secondary,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
                                 ),
-                                overflow: TextOverflow.ellipsis,
-                                maxLines: 2,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(25),
+                                ),
                               ),
+                              icon: Icon(
+                                _isPlaying ? Icons.pause : Icons.play_arrow,
+                              ),
+                              label: Text(_isPlaying ? 'Pausar' : 'Reproduzir'),
                             ),
                           ],
-                        ),
+                        ],
                       ),
+                      if (_audioFilePath != null) ...[
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade100,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.audiotrack,
+                                color: Colors.green.shade700,
+                                size: 16,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Áudio: ${_audioFilePath!.split('/').last}\nSalvo em: $_audioFilePath',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.green.shade700,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 2,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
+              ],
               const SizedBox(height: 20),
               TextField(
                 controller: _contentController,
@@ -949,12 +1052,19 @@ class _SummaryDialogState extends State<SummaryDialog> {
               if (_titleController.text.trim().isEmpty &&
                   _contentController.text.trim().isEmpty &&
                   _audioFilePath == null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'Insira pelo menos um título, texto ou grave um áudio',
+                await showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Aviso'),
+                    content: const Text(
+                      'Insira pelo menos um título, texto ou grave um áudio.',
                     ),
-                    backgroundColor: Colors.orange,
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('OK'),
+                      ),
+                    ],
                   ),
                 );
                 return;
@@ -971,7 +1081,9 @@ class _SummaryDialogState extends State<SummaryDialog> {
               }
 
               final newSummary = Summary(
-                id: widget.summary?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
+                id:
+                    widget.summary?.id ??
+                    DateTime.now().millisecondsSinceEpoch.toString(),
                 title: _titleController.text.trim().isEmpty
                     ? 'Resumo ${DateTime.now().day}/${DateTime.now().month}'
                     : _titleController.text.trim(),

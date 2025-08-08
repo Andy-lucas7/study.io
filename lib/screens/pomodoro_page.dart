@@ -14,7 +14,7 @@ class PomodoroPage extends StatelessWidget {
     PomodoroNotifier notifier,
   ) async {
     final tasks = await DatabaseService.getTasksByDate(
-      DateFormat('yyyy-MM-dd').format(DateTime.now()),
+      DateTime.now(),
     );
     if (tasks.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(

@@ -1,8 +1,10 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class Task {
-  final int? id;
+  final String? id;
   final String title;
   final String description;
-  final String date;
+  final DateTime date;
   final int priority;
   final bool completed;
   final DateTime? startTime;
@@ -21,33 +23,61 @@ class Task {
 
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
       'title': title,
       'description': description,
-      'date': date,
+      'date': Timestamp.fromDate(date),
       'priority': priority,
-      'completed': completed ? 1 : 0,
-      'startTime': startTime?.toIso8601String(),
-      'endTime': endTime?.toIso8601String(),
+      'completed': completed,
+      'startTime': startTime != null ? Timestamp.fromDate(startTime!) : null,
+      'endTime': endTime != null ? Timestamp.fromDate(endTime!) : null,
     };
   }
 
   factory Task.fromMap(Map<String, dynamic> map) {
+    DateTime parseDate(dynamic value) {
+      if (value == null) return DateTime.now();
+      if (value is Timestamp) return value.toDate();
+      if (value is DateTime) return value;
+      if (value is String) {
+        try {
+          return DateTime.parse(value);
+        } catch (_) {
+          return DateTime.now();
+        }
+      }
+      return DateTime.now();
+    }
+
+    DateTime? parseNullableDate(dynamic value) {
+      if (value == null) return null;
+      if (value is Timestamp) return value.toDate();
+      if (value is DateTime) return value;
+      if (value is String) {
+        try {
+          return DateTime.parse(value);
+        } catch (_) {
+          return null;
+        }
+      }
+      return null;
+    }
+
     return Task(
-      id: map['id'],
-      title: map['title'],
-      description: map['description'] ?? 'Sem descrição.',
-      date: map['date'],
-      priority: map['priority'],
-      completed: map['completed'] == 1,
-      startTime: map['startTime'] != null ? DateTime.parse(map['startTime']) : null,
-      endTime: map['endTime'] != null ? DateTime.parse(map['endTime']) : null,
+      id: map['id']?.toString(),
+      title: map['title'] ?? '',
+      description: map['description'] ?? '',
+      date: parseDate(map['date']),
+      priority: map['priority'] ?? 0,
+      completed: map['completed'] ?? false,
+      startTime: parseNullableDate(map['startTime']),
+      endTime: parseNullableDate(map['endTime']),
     );
   }
 
   int getStudyMinutes() {
-    if (startTime == null) return 0;
-    final end = endTime ?? DateTime.now();
-    return end.difference(startTime!).inMinutes;
+    if (startTime != null && endTime != null) {
+      return endTime!.difference(startTime!).inMinutes;
+    }
+    return 0;
   }
 }

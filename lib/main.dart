@@ -4,11 +4,15 @@ import 'notifiers/pomodoro_notifier.dart';
 import 'screens/splash_page.dart';
 import 'core/app_config.dart';
 import 'services/database_service.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  await initializeDateFormatting('pt_BR', null);
   await DatabaseService.init();
 
   runApp(
