@@ -16,13 +16,13 @@ class DatabaseService {
     final dayEnd = dayStart.add(const Duration(days: 1));
     return _firestore
         .collection(_collection)
-        .where('date', isGreaterThanOrEqualTo: dayStart.toIso8601String())
-        .where('date', isLessThan: dayEnd.toIso8601String())
+        .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(dayStart))
+        .where('date', isLessThan: Timestamp.fromDate(dayEnd))
         .orderBy('date')
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => Task.fromMap(doc.data()..['id'] = doc.id))
-            .toList());
+        .map(
+          (snapshot) => snapshot.docs.map((doc) => Task.fromDoc(doc)).toList(),
+        );
   }
 
   static Future<List<Task>> getTasksByDate(DateTime date) async {
@@ -30,28 +30,30 @@ class DatabaseService {
     final dayEnd = dayStart.add(const Duration(days: 1));
     final snapshot = await _firestore
         .collection(_collection)
-        .where('date', isGreaterThanOrEqualTo: dayStart.toIso8601String())
-        .where('date', isLessThan: dayEnd.toIso8601String())
+        .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(dayStart))
+        .where('date', isLessThan: Timestamp.fromDate(dayEnd))
         .orderBy('date')
         .get();
 
-    return snapshot.docs
-        .map((doc) => Task.fromMap(doc.data()..['id'] = doc.id))
-        .toList();
+    return snapshot.docs.map((doc) => Task.fromDoc(doc)).toList();
   }
 
   static Stream<List<Task>> streamAllTasks() {
-    return _firestore.collection(_collection).orderBy('date').snapshots().map(
-        (snapshot) => snapshot.docs
-            .map((doc) => Task.fromMap(doc.data()..['id'] = doc.id))
-            .toList());
+    return _firestore
+        .collection(_collection)
+        .orderBy('date')
+        .snapshots()
+        .map(
+          (snapshot) => snapshot.docs.map((doc) => Task.fromDoc(doc)).toList(),
+        );
   }
 
   static Future<List<Task>> getTasks() async {
-    final snapshot = await _firestore.collection(_collection).orderBy('date').get();
-    return snapshot.docs
-        .map((doc) => Task.fromMap(doc.data()..['id'] = doc.id))
-        .toList();
+    final snapshot = await _firestore
+        .collection(_collection)
+        .orderBy('date')
+        .get();
+    return snapshot.docs.map((doc) => Task.fromDoc(doc)).toList();
   }
 
   static Future<void> insertTask(Task task) async {
@@ -64,14 +66,21 @@ class DatabaseService {
     if (task.id == null) throw Exception("Task ID is null, cannot update.");
     final data = task.toMap();
     data.remove('id');
-    await _firestore.collection(_collection).doc(task.id.toString()).update(data);
+    await _firestore
+        .collection(_collection)
+        .doc(task.id.toString())
+        .update(data);
   }
 
   static Future<void> deleteTask(String id) async {
     await _firestore.collection(_collection).doc(id).delete();
   }
 
-  static Future<void> updateTaskTime(String taskId, int? pomodoroCount, int? timeSpent) async {
+  static Future<void> updateTaskTime(
+    String taskId,
+    int? pomodoroCount,
+    int? timeSpent,
+  ) async {
     final docRef = _firestore.collection(_collection).doc(taskId);
     final updates = <String, dynamic>{};
 
@@ -84,7 +93,7 @@ class DatabaseService {
   static Future<Task?> getTaskById(String id) async {
     final doc = await _firestore.collection(_collection).doc(id).get();
     if (doc.exists) {
-      return Task.fromMap(doc.data()!..['id'] = doc.id);
+      return Task.fromDoc(doc);
     }
     return null;
   }

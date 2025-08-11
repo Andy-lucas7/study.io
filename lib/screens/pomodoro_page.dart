@@ -4,7 +4,6 @@ import 'package:study_io/core/app_config.dart';
 import '../notifiers/pomodoro_notifier.dart';
 import '../services/database_service.dart';
 import '../widgets/settings_drawer.dart';
-import 'package:intl/intl.dart';
 
 class PomodoroPage extends StatelessWidget {
   const PomodoroPage({super.key});

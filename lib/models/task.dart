@@ -63,7 +63,6 @@ class Task {
     }
 
     return Task(
-      id: map['id']?.toString(),
       title: map['title'] ?? '',
       description: map['description'] ?? '',
       date: parseDate(map['date']),
@@ -71,6 +70,46 @@ class Task {
       completed: map['completed'] ?? false,
       startTime: parseNullableDate(map['startTime']),
       endTime: parseNullableDate(map['endTime']),
+    );
+  }
+
+  factory Task.fromDoc(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    return Task(
+      id: doc.id,
+      title: data['title'] ?? '',
+      description: data['description'] ?? '',
+      date: data['date'] is Timestamp ? (data['date'] as Timestamp).toDate() : DateTime.now(),
+      priority: data['priority'] ?? 0,
+      completed: data['completed'] ?? false,
+      startTime: data['startTime'] != null
+          ? (data['startTime'] as Timestamp).toDate()
+          : null,
+      endTime: data['endTime'] != null
+          ? (data['endTime'] as Timestamp).toDate()
+          : null,
+    );
+  }
+
+  Task copyWith({
+    String? id,
+    String? title,
+    String? description,
+    DateTime? date,
+    int? priority,
+    bool? completed,
+    DateTime? startTime,
+    DateTime? endTime,
+  }) {
+    return Task(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      date: date ?? this.date,
+      priority: priority ?? this.priority,
+      completed: completed ?? this.completed,
+      startTime: startTime ?? this.startTime,
+      endTime: endTime ?? this.endTime,
     );
   }
 
