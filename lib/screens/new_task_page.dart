@@ -184,9 +184,9 @@ class _NewTaskPageState extends State<NewTaskPage> {
                 value: _priority,
                 decoration: const InputDecoration(labelText: 'Prioridade'),
                 items: const [
-                  DropdownMenuItem(value: 1, child: Text('Baixa')),
-                  DropdownMenuItem(value: 2, child: Text('Média')),
-                  DropdownMenuItem(value: 3, child: Text('Alta')),
+                  DropdownMenuItem(value: 0, child: Text('Baixa')),
+                  DropdownMenuItem(value: 1, child: Text('Média')),
+                  DropdownMenuItem(value: 2, child: Text('Alta')),
                 ],
                 onChanged: (value) {
                   if (value != null) {
