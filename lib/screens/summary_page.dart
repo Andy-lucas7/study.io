@@ -372,98 +372,21 @@ class _SummaryDetailsDialogState extends State<_SummaryDetailsDialog> {
 
   @override
   void dispose() {
-    if (_isPlaying) {
-      _audioPlayer.stop();
-    }
     _audioPlayer.dispose();
     super.dispose();
   }
 
-  Future<void> _togglePlayback() async {
-    if (widget.summary.audioPath == null || kIsWeb) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Reprodução de áudio não suportada no web'),
-        ),
-      );
-      return;
-    }
-
-    try {
-      if (_isPlaying) {
-        await _audioPlayer.pause();
-        setState(() => _isPlaying = false);
-      } else {
+  Future<void> _togglePlayPause() async {
+    if (_isPlaying) {
+      await _audioPlayer.pause();
+      setState(() => _isPlaying = false);
+    } else {
+      if (widget.summary.audioPath != null) {
         await _audioPlayer.play(DeviceFileSource(widget.summary.audioPath!));
         setState(() => _isPlaying = true);
         _audioPlayer.onPlayerComplete.listen((event) {
           setState(() => _isPlaying = false);
         });
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erro ao reproduzir áudio: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
-  Future<void> _exportSummary() async {
-    try {
-      String textFilePath;
-      if (kIsWeb) {
-        textFilePath = 'summary_${_sanitizeFileName(widget.summary.title)}.txt';
-      } else {
-        final directory = await getApplicationDocumentsDirectory();
-        textFilePath =
-            '${directory.path}/${_sanitizeFileName(widget.summary.title)}.txt';
-      }
-
-      String textContent =
-          '''Título: ${widget.summary.title}
-Descrição: ${widget.summary.description}
-Data de criação: ${widget.summary.createdAt.toString()}
-
-Conteúdo:
-${widget.summary.content}''';
-
-      List<XFile> filesToShare = [];
-      if (!kIsWeb) {
-        final textFile = File(textFilePath);
-        await textFile.writeAsString(textContent);
-        filesToShare.add(XFile(textFilePath));
-      }
-
-      if (widget.summary.audioPath != null &&
-          !kIsWeb &&
-          await File(widget.summary.audioPath!).exists()) {
-        filesToShare.add(XFile(widget.summary.audioPath!));
-      }
-
-      await Share.shareXFiles(
-        filesToShare,
-        text: kIsWeb ? textContent : 'Resumo: ${widget.summary.title}',
-        subject: widget.summary.title,
-      );
-
-      if (!kIsWeb && await File(textFilePath).exists()) {
-        await File(textFilePath).delete();
-      }
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Resumo compartilhado com sucesso!')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Erro ao compartilhar: $e')));
       }
     }
   }
@@ -471,110 +394,42 @@ ${widget.summary.content}''';
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(
-        widget.summary.title.isEmpty ? 'Resumo' : widget.summary.title,
-      ),
+      title: Text(widget.summary.title.isEmpty ? 'Sem título' : widget.summary.title),
       content: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (widget.summary.description.isNotEmpty) ...[
-              const Text(
-                'Descrição:',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              Text(widget.summary.description),
-              const SizedBox(height: 16),
-            ],
-            if (widget.summary.content.isNotEmpty) ...[
-              const Text(
-                'Conteúdo:',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              Text(widget.summary.content),
-              const SizedBox(height: 16),
-            ],
-            if (widget.summary.audioPath != null) ...[
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.blue.shade200),
-                ),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.audiotrack, color: Colors.blue.shade600),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Áudio: ${widget.summary.audioPath!.split('/').last}\nSalvo em: ${widget.summary.audioPath}',
-                            style: TextStyle(
-                              color: Colors.blue.shade600,
-                              fontWeight: FontWeight.w500,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (!kIsWeb) ...[
-                      const SizedBox(height: 8),
-                      ElevatedButton.icon(
-                        onPressed: _togglePlayback,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _isPlaying
-                              ? Colors.orange
-                              : Theme.of(context).colorScheme.secondary,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(25),
-                          ),
-                        ),
-                        icon: Icon(_isPlaying ? Icons.pause : Icons.play_arrow),
-                        label: Text(_isPlaying ? 'Pausar' : 'Reproduzir'),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ],
-            const SizedBox(height: 16),
             Text(
-              'Criado em: ${widget.summary.createdAt.day}/${widget.summary.createdAt.month}/${widget.summary.createdAt.year} às ${widget.summary.createdAt.hour.toString().padLeft(2, '0')}:${widget.summary.createdAt.minute.toString().padLeft(2, '0')}',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-                fontStyle: FontStyle.italic,
-              ),
+              widget.summary.description.isEmpty ? 'Sem descrição' : widget.summary.description,
+              style: const TextStyle(fontWeight: FontWeight.w600),
             ),
+            const SizedBox(height: 12),
+            Text(widget.summary.content),
+            if (widget.summary.audioPath != null) ...[
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  IconButton(
+                    icon: Icon(_isPlaying ? Icons.pause : Icons.play_arrow),
+                    onPressed: _togglePlayPause,
+                  ),
+                  const Text('Áudio gravado'),
+                ],
+              ),
+            ],
           ],
         ),
       ),
       actions: [
-        TextButton.icon(
-          onPressed: () {
-            Navigator.pop(context);
-            _exportSummary();
-          },
-          icon: const Icon(Icons.share),
-          label: const Text('Compartilhar'),
-        ),
         TextButton(
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.of(context).pop(),
           child: const Text('Fechar'),
         ),
       ],
     );
   }
 }
+
 
 class SummaryDialog extends StatefulWidget {
   final Summary? summary;

@@ -35,7 +35,7 @@ class _TasksPageState extends State<TasksPage>
   static const Duration _cacheValidDuration = Duration(minutes: 5);
 
   // IDs das tasks em modo "delete"
-  Set<String> _deleteModeTaskIds = {};
+  final Set<String> _deleteModeTaskIds = {};
   
   // Controllers de animação
   late AnimationController _deleteAnimationController;

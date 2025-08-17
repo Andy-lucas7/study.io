@@ -286,7 +286,7 @@ class _ProgressPageState extends State<ProgressPage> {
         final pauseHeight = (_dailyPauses[i] / maxValue) * 140;
         final isToday = DateTime.now().weekday % 7 == i;
         // Mover a lógica visual para um widget separado
-        Widget _buildStudyPauseBar(ThemeData theme, int studyMinutes, int pauses, String day, bool isToday, double maxValue) {
+        Widget buildStudyPauseBar(ThemeData theme, int studyMinutes, int pauses, String day, bool isToday, double maxValue) {
           final studyHeight = (studyMinutes / maxValue) * 140;
           final pauseHeight = (pauses / maxValue) * 140;
 
