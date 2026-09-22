@@ -55,7 +55,7 @@ class AppConfig {
       'label': 'Chuva',
       'backgroundImage': 'assets/images/rain_background.png',
       'image': 'assets/images/rain.png',
-      'audio': 'assets/audio/chuva.mp3',
+      'audio': 'audio/chuva.mp3',
       'theme': ThemeData.dark().copyWith(
         colorScheme: const ColorScheme.dark(
           primary: Color.fromARGB(255, 93, 128, 170),
@@ -68,7 +68,7 @@ class AppConfig {
       'label': 'Floresta',
       'backgroundImage': 'assets/images/forest_background.png',
       'image': 'assets/images/forest.png',
-      'audio': 'assets/audio/floresta.m4a',
+      'audio': 'audio/floresta.m4a',
       'theme': ThemeData.dark().copyWith(
         colorScheme: const ColorScheme.dark(
           primary: Color.fromARGB(255, 76, 163, 70),
@@ -81,7 +81,7 @@ class AppConfig {
       'label': 'Cafeteria',
       'backgroundImage': 'assets/images/coffee_background.png',
       'image': 'assets/images/coffee.png',
-      'audio': 'assets/audio/cafeteria.mp3',
+      'audio': 'audio/cafeteria.mp3',
       'theme': ThemeData.dark().copyWith(
         colorScheme: const ColorScheme.dark(
           primary: Color.fromARGB(255, 80, 55, 46),
@@ -94,7 +94,7 @@ class AppConfig {
       'label': 'White Noise',
       'backgroundImage': 'assets/images/white_background.png',
       'image': 'assets/images/white.png',
-      'audio': 'assets/audio/white_noise.mp3',
+      'audio': 'audio/white_noise.mp3',
       'theme': ThemeData.dark().copyWith(
         colorScheme: const ColorScheme.dark(
           primary: Color.fromARGB(255, 175, 214, 214),

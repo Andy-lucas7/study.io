@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'dart:math' as math;
+import 'dart:ui';
 import '../core/app_config.dart';
 import '../widgets/settings_drawer.dart';
 
@@ -52,36 +54,43 @@ class _WavePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
-
     final center = Offset(size.width / 2, size.height / 2);
-    const cornerRadius = Radius.circular(20);
-    final maxExpand = size.width * 0.08;
 
-    for (int i = 0; i < 3; i++) {
-      final progress = (controller.value + i / 3) % 1.0;
-      final expand = progress * maxExpand;
-      paint.color = const Color.fromARGB(
-        180,
-        255,
-        255,
-        255,
-      ).withOpacity(1 - progress);
+    for (int i = 0; i < 2; i++) {
+      final p = (controller.value + (i * 0.5)) % 1.0;
+      final curvedP = Curves.easeOut.transform(p);
+      final expand = curvedP * 12.0;
+
+      final paint = Paint()
+        ..color = Colors.white.withOpacity(0.5 * (1 - p))
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3.0 * (1 - p) + 1.0
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3.0);
 
       final rrect = RRect.fromRectAndRadius(
         Rect.fromCenter(
           center: center,
-          width: (size.width - 3) + expand * 2,
-          height: (size.height - 3) + expand * 2,
+          width: size.width + expand * 2,
+          height: size.height + expand * 2,
         ),
-        cornerRadius,
+        Radius.circular(20 + expand * 0.5),
       );
 
       canvas.drawRRect(rrect, paint);
     }
+
+    final borderPaint = Paint()
+      ..color = Colors.white.withOpacity(
+        0.2 + 0.3 * math.sin(controller.value * 2 * math.pi).abs(),
+      )
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5;
+
+    final rrectBase = RRect.fromRectAndRadius(
+      Rect.fromCenter(center: center, width: size.width, height: size.height),
+      const Radius.circular(20),
+    );
+    canvas.drawRRect(rrectBase, borderPaint);
   }
 
   @override
@@ -133,32 +142,84 @@ class EnvironmentSoundPage extends StatelessWidget {
               },
               child: WaveAnimation(
                 isActive: showWave,
-                child: Container(
-                  alignment: Alignment.bottomLeft,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    border: isSelected && !showWave
-                        ? Border.all(color: Colors.white, width: 2)
-                        : null,
-                    image: DecorationImage(
-                      image: AssetImage(AppConfig.getImage(env)),
-                      fit: BoxFit.cover,
-                      colorFilter: ColorFilter.mode(
-                        Colors.black.withOpacity(0.4),
-                        BlendMode.darken,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Container(
+                      alignment: Alignment.bottomLeft,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        border:
+                            isSelected && !isPlaying && env != Environment.mute
+                            ? Border.all(
+                                color: Colors.white.withOpacity(0.5),
+                                width: 1.5,
+                              )
+                            : null,
+                        image: DecorationImage(
+                          image: AssetImage(AppConfig.getImage(env)),
+                          fit: BoxFit.cover,
+                          colorFilter: ColorFilter.mode(
+                            Colors.black.withOpacity(0.4),
+                            BlendMode.darken,
+                          ),
+                        ),
+                        color: AppConfig.tile,
+                      ),
+                      padding: const EdgeInsets.all(16),
+                      child: Text(
+                        AppConfig.getLabel(env),
+                        style: AppConfig().montserratTitle.copyWith(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w100,
+                        ),
                       ),
                     ),
-                    color: AppConfig.tile,
-                  ),
-                  padding: const EdgeInsets.all(16),
-                  child: Text(
-                    AppConfig.getLabel(env),
-                    style: AppConfig().montserratTitle.copyWith(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w100,
+                    Center(
+                      child: AnimatedScale(
+                        scale:
+                            (isSelected &&
+                                !isPlaying &&
+                                env != Environment.mute)
+                            ? 1.0
+                            : 0.0,
+                        duration: const Duration(milliseconds: 400),
+                        curve: Curves.easeOutBack,
+                        child: AnimatedOpacity(
+                          opacity:
+                              (isSelected &&
+                                  !isPlaying &&
+                                  env != Environment.mute)
+                              ? 1.0
+                              : 0.0,
+                          duration: const Duration(milliseconds: 300),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(40),
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                              child: Container(
+                                padding: const EdgeInsets.all(14),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.white.withOpacity(0.15),
+                                  border: Border.all(
+                                    color: Colors.white.withOpacity(0.3),
+                                    width: 1.5,
+                                  ),
+                                ),
+                                child: const Icon(
+                                  Icons.pause_rounded,
+                                  color: Colors.white,
+                                  size: 32,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
+                  ],
                 ),
               ),
             );
