@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'screens/tasks_page.dart';
@@ -33,6 +34,52 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
+  Widget _buildNavItem(int index, IconData iconData, Color primaryColor) {
+    final isSelected = _currentIndex == index;
+
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _currentIndex = index;
+        });
+        _pageController.animateToPage(
+          index,
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeOutCubic,
+        );
+      },
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeOutCubic,
+        padding: EdgeInsets.symmetric(
+          horizontal: isSelected ? 24 : 12,
+          vertical: 12,
+        ),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? primaryColor.withOpacity(0.4)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(24),
+          border: isSelected
+              ? Border.all(color: Colors.white.withOpacity(0.3), width: 1)
+              : Border.all(color: Colors.transparent, width: 1),
+        ),
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          transitionBuilder: (child, animation) =>
+              ScaleTransition(scale: animation, child: child),
+          child: Icon(
+            iconData,
+            key: ValueKey<bool>(isSelected),
+            color: isSelected ? Colors.white : Colors.white.withOpacity(0.6),
+            size: isSelected ? 28 : 24,
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final backgroundImagePath = context
@@ -41,28 +88,20 @@ class _HomePageState extends State<HomePage> {
     final env = context.read<EnvironmentNotifier>();
     final sound = env.environment.name.toLowerCase();
     Icon environmentIconSound;
-    String soundLabel;
     if (sound == 'coffee') {
-      soundLabel = 'som de cafeteria';
-      environmentIconSound = Icon(HugeIcons.strokeRoundedCoffee02);
+      environmentIconSound = const Icon(HugeIcons.strokeRoundedCoffee02);
     } else if (sound == 'rain') {
-      soundLabel = 'som de chuva';
-      environmentIconSound = Icon(HugeIcons.strokeRoundedCloud);
+      environmentIconSound = const Icon(HugeIcons.strokeRoundedCloud);
     } else if (sound == 'forest') {
-      soundLabel = 'som de floresta';
-      environmentIconSound = Icon(HugeIcons.strokeRoundedPineTree);
-    } else if (sound == 'mute') {
-      soundLabel = 'sem som';
-      environmentIconSound = Icon(HugeIcons.strokeRoundedVolumeMute02);
+      environmentIconSound = const Icon(HugeIcons.strokeRoundedPineTree);
     } else if (sound == 'white') {
-      soundLabel = 'som branco';
-      environmentIconSound = Icon(HugeIcons.strokeRoundedVoice);
+      environmentIconSound = const Icon(HugeIcons.strokeRoundedVoice);
     } else {
-      soundLabel = sound;
-      environmentIconSound = Icon(HugeIcons.strokeRoundedVolumeMute02);
+      environmentIconSound = const Icon(HugeIcons.strokeRoundedVolumeMute02);
     }
 
     final currentTheme = Theme.of(context);
+    final primaryColor = currentTheme.colorScheme.primary;
 
     return Stack(
       children: [
@@ -88,6 +127,7 @@ class _HomePageState extends State<HomePage> {
         ),
         Scaffold(
           backgroundColor: Colors.transparent,
+          extendBody: false,
           body: PageView(
             controller: _pageController,
             onPageChanged: (index) {
@@ -98,81 +138,60 @@ class _HomePageState extends State<HomePage> {
             physics: const PageScrollPhysics(),
             children: _pages,
           ),
-          bottomNavigationBar: Container(
-            decoration: BoxDecoration(
-              color: Colors.transparent,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(20),
-                topRight: Radius.circular(20),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  spreadRadius: 1,
-                  blurRadius: 10,
-                  offset: const Offset(0, -2),
+          bottomNavigationBar: SafeArea(
+            child: Container(
+              margin: const EdgeInsets.only(left: 24, right: 24, bottom: 16),
+              margin: const EdgeInsets.only(left: 8, right: 8, bottom: 16),
+              height: 72,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(36),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.2),
+                  width: 1.5,
                 ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: const BorderRadius.horizontal(
-                left: Radius.circular(20),
-                right: Radius.circular(20),
-              ),
-              child: SizedBox(
-                height: 80,
-                child: BottomNavigationBar(
-                  iconSize: 32,
-                  currentIndex: _currentIndex,
-                  backgroundColor: Colors.transparent,
-                  elevation: 0,
-                  selectedLabelStyle: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.15),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
                   ),
-                  selectedItemColor: env.environment == Environment.coffee
-                      ? currentTheme.colorScheme.onPrimary
-                      : currentTheme.colorScheme.primary,
-                  unselectedItemColor:
-                  currentTheme.colorScheme.secondary,
-                  onTap: (index) {
-                    setState(() {
-                      _currentIndex = index;
-                    });
-                    _pageController.animateToPage(
-                      index,
-                      duration: const Duration(milliseconds: 400),
-                      curve: Curves.ease,
-                    );
-                  },
-                  type: BottomNavigationBarType.shifting,
-                  items: [
-                    BottomNavigationBarItem(
-                      backgroundColor: AppConfig.background.withOpacity(0.34),
-                      icon: Icon(HugeIcons.strokeRoundedTask01),
-                      label: 'Tarefas',
-                    ),
-                    BottomNavigationBarItem(
-                      backgroundColor: AppConfig.background.withOpacity(0.34),
-                      icon: Icon(HugeIcons.strokeRoundedClock01),
-                      label: 'Pomodoro',
-                    ),
-                    BottomNavigationBarItem(
-                      backgroundColor: AppConfig.background.withOpacity(0.34),
-                      icon: environmentIconSound,
-                      label: soundLabel,
-                    ),
-                    BottomNavigationBarItem(
-                      backgroundColor: AppConfig.background.withOpacity(0.34),
-                      icon: Icon(HugeIcons.strokeRoundedBook02),
-                      label: 'Resumos',
-                    ),
-                    BottomNavigationBarItem(
-                      backgroundColor: AppConfig.background.withOpacity(0.34),
-                      icon: Icon(HugeIcons.strokeRoundedBarChart),
-                      label: 'Progresso',
-                    ),
-                  ],
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(36),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _buildNavItem(
+                        0,
+                        HugeIcons.strokeRoundedTask01,
+                        primaryColor,
+                      ),
+                      _buildNavItem(
+                        1,
+                        HugeIcons.strokeRoundedClock01,
+                        primaryColor,
+                      ),
+                      _buildNavItem(
+                        2,
+                        environmentIconSound.icon!,
+                        primaryColor,
+                      ),
+                      _buildNavItem(
+                        3,
+                        HugeIcons.strokeRoundedBook02,
+                        primaryColor,
+                      ),
+                      _buildNavItem(
+                        4,
+                        HugeIcons.strokeRoundedBarChart,
+                        primaryColor,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

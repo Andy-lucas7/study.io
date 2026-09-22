@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/glass_container.dart';
 import 'package:intl/intl.dart';
 import 'package:study_io/screens/new_task_page.dart';
 import 'package:study_io/widgets/settings_drawer.dart';
@@ -19,7 +20,10 @@ class TasksPage extends StatefulWidget {
 }
 
 class _TasksPageState extends State<TasksPage>
-    with AutomaticKeepAliveClientMixin, TickerProviderStateMixin, WidgetsBindingObserver {
+    with
+        AutomaticKeepAliveClientMixin,
+        TickerProviderStateMixin,
+        WidgetsBindingObserver {
   Map<DateTime, List<Task>> _events = {};
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
@@ -36,11 +40,11 @@ class _TasksPageState extends State<TasksPage>
 
   // IDs das tasks em modo "delete"
   final Set<String> _deleteModeTaskIds = {};
-  
+
   // Controllers de animação
   late AnimationController _deleteAnimationController;
   late AnimationController _listAnimationController;
-  
+
   // GlobalKey para animações da lista
   final GlobalKey<AnimatedListState> _listKey = GlobalKey<AnimatedListState>();
 
@@ -51,21 +55,21 @@ class _TasksPageState extends State<TasksPage>
   void initState() {
     super.initState();
     _selectedDay = DateTime.now();
-    
+
     // Inicializa controllers de animação
     _deleteAnimationController = AnimationController(
       duration: const Duration(milliseconds: 400),
       vsync: this,
     );
-    
+
     _listAnimationController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
-    
+
     // Observer para detectar quando o app volta do background
     WidgetsBinding.instance.addObserver(this);
-    
+
     _loadTasks();
   }
 
@@ -90,11 +94,14 @@ class _TasksPageState extends State<TasksPage>
   String _generateTasksHash(List<Task> tasks) {
     final sortedTasks = List<Task>.from(tasks)
       ..sort((a, b) => a.id!.compareTo(b.id!));
-    
-    final hashString = sortedTasks.map((task) => 
-      '${task.id}-${task.title}-${task.completed}-${task.date.millisecondsSinceEpoch}'
-    ).join('|');
-    
+
+    final hashString = sortedTasks
+        .map(
+          (task) =>
+              '${task.id}-${task.title}-${task.completed}-${task.date.millisecondsSinceEpoch}',
+        )
+        .join('|');
+
     return hashString.hashCode.toString();
   }
 
@@ -103,19 +110,19 @@ class _TasksPageState extends State<TasksPage>
     try {
       final tasks = await DatabaseService.getTasks();
       final newHash = _generateTasksHash(tasks);
-      
+
       // Só atualiza se o hash mudou (houve alterações reais)
       if (_lastTasksHash != newHash) {
         _allTasks = tasks;
         _lastTasksHash = newHash;
         _lastLoadTime = DateTime.now();
-        
+
         _updateEventsMap();
-        
+
         setState(() {
           _selectedTasks = _getTasksForDay(_selectedDay!);
         });
-        
+
         _listAnimationController.reset();
         _listAnimationController.forward();
       }
@@ -143,34 +150,33 @@ class _TasksPageState extends State<TasksPage>
       if (_isInitialLoad || forceReload) {
         setState(() => _isLoading = true);
       }
-      
+
       await initializeDateFormatting('pt_BR', null);
 
       final tasks = await DatabaseService.getTasks();
       final newHash = _generateTasksHash(tasks);
-      
+
       // Verifica se realmente há mudanças
       if (!forceReload && _lastTasksHash == newHash && !_isInitialLoad) {
         setState(() => _isLoading = false);
         return;
       }
-      
+
       _allTasks = tasks;
       _lastTasksHash = newHash;
       _lastLoadTime = DateTime.now();
-      
+
       _updateEventsMap();
-      
+
       setState(() {
         _selectedTasks = _getTasksForDay(_selectedDay!);
         _isLoading = false;
         _isInitialLoad = false;
       });
-      
+
       // Anima a lista quando carrega
       _listAnimationController.reset();
       _listAnimationController.forward();
-      
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
@@ -189,12 +195,12 @@ class _TasksPageState extends State<TasksPage>
 
   void _updateEventsMap() {
     final Map<DateTime, List<Task>> eventMap = {};
-    
+
     for (var task in _allTasks) {
       final day = DateTime(task.date.year, task.date.month, task.date.day);
       eventMap.putIfAbsent(day, () => []).add(task);
     }
-    
+
     _events = eventMap;
   }
 
@@ -211,7 +217,7 @@ class _TasksPageState extends State<TasksPage>
         _selectedTasks = _getTasksForDay(selectedDay);
         _deleteModeTaskIds.clear();
       });
-      
+
       // Reinicia animação da lista
       _listAnimationController.reset();
       _listAnimationController.forward();
@@ -249,21 +255,21 @@ class _TasksPageState extends State<TasksPage>
     if (taskIndex == -1) return;
 
     final taskToDelete = _selectedTasks[taskIndex];
-    
+
     // Remove otimisticamente da UI
     setState(() {
       _selectedTasks.removeAt(taskIndex);
       _deleteModeTaskIds.remove(taskId);
     });
-    
+
     // Remove do cache local
     _allTasks.removeWhere((task) => task.id == taskId);
     _updateEventsMap();
-    
+
     try {
       // Faz a operação no banco de dados em background
       await DatabaseService.deleteTask(taskId);
-      
+
       // Mostra feedback de sucesso
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -298,7 +304,7 @@ class _TasksPageState extends State<TasksPage>
         _lastTasksHash = _generateTasksHash(_allTasks);
         _updateEventsMap();
       });
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -319,7 +325,7 @@ class _TasksPageState extends State<TasksPage>
     try {
       // Recria a task no banco de dados
       await DatabaseService.insertTask(task);
-      
+
       // Restaura na UI e atualiza cache
       setState(() {
         _selectedTasks.insert(
@@ -330,7 +336,7 @@ class _TasksPageState extends State<TasksPage>
         _lastTasksHash = _generateTasksHash(_allTasks);
         _updateEventsMap();
       });
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -371,7 +377,7 @@ class _TasksPageState extends State<TasksPage>
     setState(() {
       _selectedTasks[taskIndex] = updatedTask;
     });
-    
+
     // Update no cache local e hash
     final cacheIndex = _allTasks.indexWhere((t) => t.id == task.id);
     if (cacheIndex != -1) {
@@ -387,12 +393,12 @@ class _TasksPageState extends State<TasksPage>
       setState(() {
         _selectedTasks[taskIndex] = task;
       });
-      
+
       if (cacheIndex != -1) {
         _allTasks[cacheIndex] = task;
         _lastTasksHash = _generateTasksHash(_allTasks);
       }
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -414,21 +420,21 @@ class _TasksPageState extends State<TasksPage>
       final endTime = DateFormat('H:mm').format(task.endTime!);
       hourPeriod = '$startTime - $endTime';
     } else {
-      hourPeriod = 'Horário não definido';
+      hourPeriod = 'Sem horário';
     }
 
     return SlideTransition(
-      position: Tween<Offset>(
-        begin: const Offset(1, 0),
-        end: Offset.zero,
-      ).animate(CurvedAnimation(
-        parent: _listAnimationController,
-        curve: Interval(
-          (index * 0.1).clamp(0.0, 1.0),
-          ((index * 0.1) + 0.3).clamp(0.0, 1.0),
-          curve: Curves.easeOutCubic,
-        ),
-      )),
+      position: Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero)
+          .animate(
+            CurvedAnimation(
+              parent: _listAnimationController,
+              curve: Interval(
+                (index * 0.1).clamp(0.0, 1.0),
+                ((index * 0.1) + 0.3).clamp(0.0, 1.0),
+                curve: Curves.easeOutCubic,
+              ),
+            ),
+          ),
       child: FadeTransition(
         opacity: _listAnimationController,
         child: GestureDetector(
@@ -450,117 +456,139 @@ class _TasksPageState extends State<TasksPage>
             HapticFeedback.mediumImpact();
           },
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 300),
-              curve: Curves.easeInOut,
-              transform: Matrix4.identity()
-                ..scale(isInDeleteMode ? 0.98 : 1.0),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                color: isInDeleteMode
-                    ? Colors.red.withOpacity(0.1)
-                    : Colors.white.withOpacity(0.1),
-                border: isInDeleteMode
-                    ? Border.all(color: Colors.red.withOpacity(0.2), width: 1)
-                    : null,
-                boxShadow: isInDeleteMode
-                    ? [
-                        BoxShadow(
-                          color: Colors.red.withOpacity(0.2),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        )
-                      ]
-                    : null,
-              ),
-              child: ListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                title: AnimatedDefaultTextStyle(
-                  duration: const Duration(milliseconds: 200),
-                  style: TextStyle(
-                    color: isInDeleteMode ? Colors.red.shade300 : Colors.white,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                    decoration: task.completed ? TextDecoration.lineThrough : null,
-                  ),
-                  child: Text(
-                    task.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+              curve: Curves.easeOutCubic,
+              transform: Matrix4.identity()..scale(isInDeleteMode ? 0.96 : 1.0),
+              child: GlassContainer(
+                blur: 15,
+                opacity: 0.1,
+                border: Border.all(
+                  color: isInDeleteMode
+                      ? Colors.red.withOpacity(0.4)
+                      : Colors.white.withOpacity(0.15),
+                  width: 1,
                 ),
-                subtitle: task.description.isNotEmpty
-                    ? AnimatedDefaultTextStyle(
+                color: isInDeleteMode ? Colors.red.withOpacity(0.1) : null,
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Checkbox Interaction Area
+                    GestureDetector(
+                      onTap: () {
+                        if (isInDeleteMode) return;
+                        _toggleTaskCompletion(task);
+                      },
+                      child: AnimatedContainer(
                         duration: const Duration(milliseconds: 200),
-                        style: TextStyle(
-                          color: isInDeleteMode 
-                              ? Colors.red.shade200.withOpacity(0.7)
-                              : Colors.white70,
-                          fontSize: 14,
+                        width: 26,
+                        height: 26,
+                        margin: const EdgeInsets.only(top: 2, right: 16),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: task.completed
+                              ? currentTheme.colorScheme.primary
+                              : Colors.transparent,
+                          border: Border.all(
+                            color: task.completed
+                                ? currentTheme.colorScheme.primary
+                                : Colors.white54,
+                            width: 2,
+                          ),
                         ),
-                        child: Text(
-                          task.description,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      )
-                    : null,
-                leading: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  height: 35,
-                  width: 85,
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
-                    color: isInDeleteMode
-                        ? Colors.red.withOpacity(0.3)
-                        : currentTheme.colorScheme.primary,
-                  ),
-                  child: Text(
-                    hourPeriod,
-                    style: AppConfig().roboto.copyWith(
-                      fontSize: 10,
-                      color: isInDeleteMode ? Colors.red.shade100 : null,
+                        child: task.completed
+                            ? const Icon(
+                                Icons.check,
+                                size: 16,
+                                color: Colors.white,
+                              )
+                            : null,
+                      ),
                     ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-                trailing: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 300),
-                  transitionBuilder: (Widget child, Animation<double> animation) {
-                    return ScaleTransition(
-                      scale: animation,
-                      child: child,
-                    );
-                  },
-                  child: isInDeleteMode
-                      ? Container(
-                          key: const ValueKey('delete'),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.red.withOpacity(0.2),
-                          ),
-                          child: IconButton(
-                            icon: Icon(
-                              HugeIcons.strokeRoundedDelete02,
-                              color: Colors.red,
+
+                    // Task Details
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          AnimatedDefaultTextStyle(
+                            duration: const Duration(milliseconds: 200),
+                            style: TextStyle(
+                              color: isInDeleteMode
+                                  ? Colors.red.shade300
+                                  : (task.completed
+                                        ? Colors.white60
+                                        : Colors.white),
+                              fontWeight: FontWeight.w600,
+                              fontSize: 16,
+                              decoration: task.completed
+                                  ? TextDecoration.lineThrough
+                                  : null,
                             ),
-                            onPressed: () => _showDeleteConfirmation(task),
-                            tooltip: 'Excluir tarefa',
-                          ),
-                        )
-                      : Container(
-                          key: const ValueKey('checkbox'),
-                          child: Checkbox(
-                            value: task.completed,
-                            onChanged: (_) => _toggleTaskCompletion(task),
-                            activeColor: currentTheme.colorScheme.secondary,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(4),
+                            child: Text(
+                              task.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
+                          if (task.description.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              task.description,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: task.completed
+                                    ? Colors.white38
+                                    : Colors.white60,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Icon(
+                                HugeIcons.strokeRoundedClock01,
+                                size: 14,
+                                color: task.completed
+                                    ? Colors.white38
+                                    : currentTheme.colorScheme.primary,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                hourPeriod,
+                                style: TextStyle(
+                                  color: task.completed
+                                      ? Colors.white38
+                                      : currentTheme.colorScheme.primary,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Trailing Action (Delete)
+                    if (isInDeleteMode)
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 200),
+                        child: IconButton(
+                          key: const ValueKey('delete_btn'),
+                          icon: const Icon(
+                            HugeIcons.strokeRoundedDelete02,
+                            color: Colors.redAccent,
+                          ),
+                          onPressed: () => _showDeleteConfirmation(task),
                         ),
+                      ),
+                  ],
                 ),
               ),
             ),
@@ -582,11 +610,7 @@ class _TasksPageState extends State<TasksPage>
           backgroundColor: Theme.of(context).colorScheme.surface,
           title: Row(
             children: [
-              Icon(
-                Icons.warning_amber_rounded,
-                color: Colors.orange,
-                size: 28,
-              ),
+              Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 28),
               const SizedBox(width: 12),
               const Expanded(
                 child: Text(
@@ -605,10 +629,7 @@ class _TasksPageState extends State<TasksPage>
               onPressed: () => Navigator.of(context).pop(false),
               child: Text(
                 'Cancelar',
-                style: TextStyle(
-                  color: Colors.grey.shade600,
-                  fontSize: 16,
-                ),
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
               ),
             ),
             ElevatedButton(
@@ -771,10 +792,14 @@ class _TasksPageState extends State<TasksPage>
                   calendarStyle: CalendarStyle(
                     outsideDaysVisible: false,
                     todayDecoration: BoxDecoration(
-                      color: currentTheme.colorScheme.secondary.withOpacity(0.4),
+                      color: currentTheme.colorScheme.secondary.withOpacity(
+                        0.4,
+                      ),
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: currentTheme.colorScheme.primary.withOpacity(0.3),
+                        color: currentTheme.colorScheme.primary.withOpacity(
+                          0.3,
+                        ),
                         width: 2.3,
                       ),
                     ),
@@ -825,18 +850,20 @@ class _TasksPageState extends State<TasksPage>
                 child: _isLoading
                     ? const Center(
                         child: CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
                         ),
                       )
                     : _selectedTasks.isEmpty
-                        ? _buildEmptyState()
-                        : ListView.builder(
-                            padding: const EdgeInsets.only(top: 8, bottom: 20),
-                            itemCount: _selectedTasks.length,
-                            itemBuilder: (context, index) {
-                              return _buildTaskItem(_selectedTasks[index], index);
-                            },
-                          ),
+                    ? _buildEmptyState()
+                    : ListView.builder(
+                        padding: const EdgeInsets.only(top: 8, bottom: 20),
+                        itemCount: _selectedTasks.length,
+                        itemBuilder: (context, index) {
+                          return _buildTaskItem(_selectedTasks[index], index);
+                        },
+                      ),
               ),
             ],
           ),

@@ -1,8 +1,11 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import '../models/task.dart';
 import '../services/database_service.dart';
+import '../core/app_config.dart';
 
 class NewTaskPage extends StatefulWidget {
   const NewTaskPage({super.key});
@@ -91,115 +94,256 @@ class _NewTaskPageState extends State<NewTaskPage> {
 
   @override
   Widget build(BuildContext context) {
+    final backgroundImagePath = context
+        .watch<EnvironmentNotifier>()
+        .backgroundImagePath;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Nova Tarefa')),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: [
-              TextFormField(
-                controller: _titleController,
-                decoration: const InputDecoration(labelText: 'Título'),
-                validator: (value) =>
-                    value == null || value.isEmpty ? 'Informe o título' : null,
-              ),
-              TextFormField(
-                controller: _descriptionController,
-                decoration: const InputDecoration(labelText: 'Descrição'),
-                maxLines: 3,
-                validator: (value) => value == null || value.isEmpty
-                    ? 'Informe a descrição'
-                    : null,
-              ),
-              const SizedBox(height: 20),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Data'),
-                subtitle: Text(DateFormat('dd/MM/yyyy').format(_selectedDate)),
-                trailing: IconButton(
-                  icon: const Icon(HugeIcons.strokeRoundedCalendar01),
-                  onPressed: _selectDate,
-                ),
-              ),
-              const SizedBox(height: 20),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Período'),
-                subtitle: Row(
-                  children: [
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: _selectStartTime,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          decoration: BoxDecoration(
-                            border: Border(
-                              bottom: BorderSide(
-                                color: Theme.of(context).dividerColor,
-                              ),
-                            ),
-                          ),
-                          child: Text(
-                            _startTime != null
-                                ? _startTime!.format(context)
-                                : '--:--',
-                            style: const TextStyle(fontSize: 20),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 8),
-                      child: Text('-'),
-                    ),
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: _selectEndTime,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          decoration: BoxDecoration(
-                            border: Border(
-                              bottom: BorderSide(
-                                color: Theme.of(context).dividerColor,
-                              ),
-                            ),
-                          ),
-                          child: Text(
-                            _endTime != null
-                                ? _endTime!.format(context)
-                                : '--:--',
-                            style: const TextStyle(fontSize: 20),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                trailing: Icon(HugeIcons.strokeRoundedTime04),
-              ),
-              const SizedBox(height: 20),
-              DropdownButtonFormField<int>(
-                value: _priority,
-                decoration: const InputDecoration(labelText: 'Prioridade'),
-                items: const [
-                  DropdownMenuItem(value: 0, child: Text('Baixa')),
-                  DropdownMenuItem(value: 1, child: Text('Média')),
-                  DropdownMenuItem(value: 2, child: Text('Alta')),
-                ],
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() {
-                      _priority = value;
-                    });
-                  }
-                },
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(onPressed: _saveTask, child: const Text('Salvar')),
-            ],
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
+      body: Stack(
+        children: [
+          // Background
+          Positioned.fill(
+            child: backgroundImagePath.isNotEmpty
+                ? Image.asset(backgroundImagePath, fit: BoxFit.cover)
+                : Container(color: AppConfig.background),
           ),
+          // Glass Box
+          Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(24),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                  child: Container(
+                    padding: const EdgeInsets.all(32),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.2),
+                        width: 1.5,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.2),
+                          blurRadius: 30,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
+                    ),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text(
+                            'NOVA TAREFA',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              letterSpacing: 2,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 32),
+                          _buildTextField(
+                            controller: _titleController,
+                            label: 'Título',
+                            icon: HugeIcons.strokeRoundedTask01,
+                            validator: (value) => value == null || value.isEmpty
+                                ? 'Informe o título'
+                                : null,
+                          ),
+                          const SizedBox(height: 24),
+                          _buildTextField(
+                            controller: _descriptionController,
+                            label: 'Descrição',
+                            icon: HugeIcons.strokeRoundedTextFont,
+                            maxLines: 3,
+                            validator: (value) => value == null || value.isEmpty
+                                ? 'Informe a descrição'
+                                : null,
+                          ),
+                          const SizedBox(height: 24),
+                          _buildDateTimeField(
+                            title: 'Data',
+                            value: DateFormat(
+                              'dd/MM/yyyy',
+                            ).format(_selectedDate),
+                            icon: HugeIcons.strokeRoundedCalendar01,
+                            onTap: _selectDate,
+                          ),
+                          const SizedBox(height: 24),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _buildDateTimeField(
+                                  title: 'Início',
+                                  value: _startTime != null
+                                      ? _startTime!.format(context)
+                                      : '--:--',
+                                  icon: HugeIcons.strokeRoundedTime01,
+                                  onTap: _selectStartTime,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: _buildDateTimeField(
+                                  title: 'Fim',
+                                  value: _endTime != null
+                                      ? _endTime!.format(context)
+                                      : '--:--',
+                                  icon: HugeIcons.strokeRoundedTime04,
+                                  onTap: _selectEndTime,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 24),
+                          DropdownButtonFormField<int>(
+                            value: _priority,
+                            dropdownColor: Colors.black87,
+                            style: const TextStyle(color: Colors.white),
+                            iconEnabledColor: Colors.white70,
+                            decoration: InputDecoration(
+                              labelText: 'Prioridade',
+                              labelStyle: TextStyle(
+                                color: Colors.white.withOpacity(0.7),
+                              ),
+                              prefixIcon: Icon(
+                                HugeIcons.strokeRoundedStar,
+                                color: Colors.white.withOpacity(0.7),
+                              ),
+                              enabledBorder: UnderlineInputBorder(
+                                borderSide: BorderSide(
+                                  color: Colors.white.withOpacity(0.3),
+                                ),
+                              ),
+                              focusedBorder: const UnderlineInputBorder(
+                                borderSide: BorderSide(color: Colors.white),
+                              ),
+                            ),
+                            items: const [
+                              DropdownMenuItem(value: 0, child: Text('Baixa')),
+                              DropdownMenuItem(value: 1, child: Text('Média')),
+                              DropdownMenuItem(value: 2, child: Text('Alta')),
+                            ],
+                            onChanged: (value) {
+                              if (value != null) {
+                                setState(() {
+                                  _priority = value;
+                                });
+                              }
+                            },
+                          ),
+                          const SizedBox(height: 40),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 50,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white.withOpacity(0.2),
+                                shadowColor: Colors.transparent,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              onPressed: _saveTask,
+                              child: const Text(
+                                'SALVAR',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  letterSpacing: 1.5,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    int maxLines = 1,
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      maxLines: maxLines,
+      style: const TextStyle(color: Colors.white),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
+        prefixIcon: Icon(icon, color: Colors.white.withOpacity(0.7)),
+        enabledBorder: UnderlineInputBorder(
+          borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+        ),
+        focusedBorder: const UnderlineInputBorder(
+          borderSide: BorderSide(color: Colors.white),
+        ),
+      ),
+      validator: validator,
+    );
+  }
+
+  Widget _buildDateTimeField({
+    required String title,
+    required String value,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(color: Colors.white.withOpacity(0.3)),
+          ),
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          children: [
+            Icon(icon, color: Colors.white.withOpacity(0.7), size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.5),
+                      fontSize: 12,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    value,
+                    style: const TextStyle(color: Colors.white, fontSize: 16),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

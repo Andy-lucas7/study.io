@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 class Task {
   final String? id;
   final String title;
@@ -23,72 +21,34 @@ class Task {
 
   Map<String, dynamic> toMap() {
     return {
+      if (id != null) 'id': id,
       'title': title,
       'description': description,
-      'date': Timestamp.fromDate(date),
+      'date': date.toIso8601String(),
       'priority': priority,
-      'completed': completed,
-      'startTime': startTime != null ? Timestamp.fromDate(startTime!) : null,
-      'endTime': endTime != null ? Timestamp.fromDate(endTime!) : null,
+      'completed': completed ? 1 : 0,
+      'startTime': startTime?.toIso8601String(),
+      'endTime': endTime?.toIso8601String(),
     };
   }
 
   factory Task.fromMap(Map<String, dynamic> map) {
-    DateTime parseDate(dynamic value) {
-      if (value == null) return DateTime.now();
-      if (value is Timestamp) return value.toDate();
-      if (value is DateTime) return value;
-      if (value is String) {
-        try {
-          return DateTime.parse(value);
-        } catch (_) {
-          return DateTime.now();
-        }
-      }
-      return DateTime.now();
-    }
-
-    DateTime? parseNullableDate(dynamic value) {
-      if (value == null) return null;
-      if (value is Timestamp) return value.toDate();
-      if (value is DateTime) return value;
-      if (value is String) {
-        try {
-          return DateTime.parse(value);
-        } catch (_) {
-          return null;
-        }
-      }
-      return null;
-    }
-
     return Task(
+      id: map['id']?.toString(),
       title: map['title'] ?? '',
       description: map['description'] ?? '',
-      date: parseDate(map['date']),
+      date: map['date'] != null ? DateTime.parse(map['date']) : DateTime.now(),
       priority: map['priority'] ?? 0,
-      completed: map['completed'] ?? false,
-      startTime: parseNullableDate(map['startTime']),
-      endTime: parseNullableDate(map['endTime']),
+      completed: (map['completed'] == 1) || (map['completed'] == true),
+      startTime: map['startTime'] != null
+          ? DateTime.parse(map['startTime'])
+          : null,
+      endTime: map['endTime'] != null ? DateTime.parse(map['endTime']) : null,
     );
   }
 
-  factory Task.fromDoc(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
-    return Task(
-      id: doc.id,
-      title: data['title'] ?? '',
-      description: data['description'] ?? '',
-      date: data['date'] is Timestamp ? (data['date'] as Timestamp).toDate() : DateTime.now(),
-      priority: data['priority'] ?? 0,
-      completed: data['completed'] ?? false,
-      startTime: data['startTime'] != null
-          ? (data['startTime'] as Timestamp).toDate()
-          : null,
-      endTime: data['endTime'] != null
-          ? (data['endTime'] as Timestamp).toDate()
-          : null,
-    );
+  factory Task.fromDoc(dynamic doc) {
+    return Task.fromMap(doc);
   }
 
   Task copyWith({

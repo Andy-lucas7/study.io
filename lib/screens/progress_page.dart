@@ -1,5 +1,5 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import '../widgets/glass_container.dart';
 import 'package:intl/intl.dart';
 import 'package:study_io/core/app_config.dart';
 import '../models/task.dart';
@@ -33,7 +33,15 @@ class _ProgressPageState extends State<ProgressPage> {
   // Gráfico
   List<int> _dailyStudyMinutes = List.filled(7, 0);
   List<int> _dailyPauses = List.filled(7, 0);
-  final List<String> _weekDays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  final List<String> _weekDays = [
+    'Dom',
+    'Seg',
+    'Ter',
+    'Qua',
+    'Qui',
+    'Sex',
+    'Sáb',
+  ];
 
   @override
   void initState() {
@@ -47,28 +55,23 @@ class _ProgressPageState extends State<ProgressPage> {
     // Pega todas tarefas (para progresso)
     final List<Task> allTasks = await DatabaseService.getTasks();
 
-    // Pega todas métricas do Firestore
-    final metricsSnapshot = await FirebaseFirestore.instance.collection('metrics').get();
-    final List<Metric> allMetrics = metricsSnapshot.docs.map((doc) => Metric.fromDoc(doc)).toList();
+    // Pega todas métricas do banco de dados
+    final List<Metric> allMetrics = await DatabaseService.getMetrics();
 
     // --- Cálculos para tarefas ---
     final completedTasks = allTasks.where((t) => t.completed).toList();
     final totalTasks = allTasks.length;
 
-    // --- Cálculos para métricas ---
-
-    // Função auxiliar para checar se a string da data bate com a data desejada
-    bool isSameDateString(String a, DateTime b) {
-      return a == DateFormat('yyyy-MM-dd').format(b);
-    }
-
     // Define intervalo semana atual (de domingo a sábado)
     final startOfWeek = now.subtract(Duration(days: now.weekday % 7));
-    final endOfWeek = startOfWeek.add(Duration(days: 7));
 
     // Filtra métricas do período de interesse
     final todayStr = DateFormat('yyyy-MM-dd').format(now);
-    final weekDates = List.generate(7, (i) => DateFormat('yyyy-MM-dd').format(startOfWeek.add(Duration(days: i))));
+    final weekDates = List.generate(
+      7,
+      (i) =>
+          DateFormat('yyyy-MM-dd').format(startOfWeek.add(Duration(days: i))),
+    );
 
     // Métricas totais (somatório geral)
     int totalStudy = 0;
@@ -159,10 +162,14 @@ class _ProgressPageState extends State<ProgressPage> {
       drawer: const SettingsDrawer(),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Resumo do progresso', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+            const Text(
+              'Resumo do progresso',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 20),
 
             // Barra de progresso tarefas
@@ -176,8 +183,13 @@ class _ProgressPageState extends State<ProgressPage> {
                   backgroundColor: theme.colorScheme.primary.withAlpha(50),
                   color: theme.colorScheme.primary,
                 ),
-                Text('${(_progressPercent * 100).toStringAsFixed(0)}% Concluídos',
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                Text(
+                  '${(_progressPercent * 100).toStringAsFixed(0)}% Concluídos',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ],
             ),
 
@@ -187,13 +199,48 @@ class _ProgressPageState extends State<ProgressPage> {
               spacing: 8,
               runSpacing: 8,
               children: [
-                _statCard('Tarefas', '$_tasksCompleted / $_totalTasks', Icons.check_circle, theme),
-                _statCard('Tempo Estudo (Total)', _formatTime(_totalStudyMinutes), Icons.timer, theme),
-                _statCard('Pausas (Total)', '$_totalPauses', Icons.pause_circle_filled, theme),
-                _statCard('Hoje - Estudo', _formatTime(_todayStudyMinutes), Icons.today, theme),
-                _statCard('Hoje - Pausas', '$_todayPauses', Icons.pause_circle, theme),
-                _statCard('Semana - Estudo', _formatTime(_weekStudyMinutes), Icons.date_range, theme),
-                _statCard('Semana - Pausas', '$_weekPauses', Icons.schedule, theme),
+                _statCard(
+                  'Tarefas',
+                  '$_tasksCompleted / $_totalTasks',
+                  Icons.check_circle,
+                  theme,
+                ),
+                _statCard(
+                  'Tempo Estudo (Total)',
+                  _formatTime(_totalStudyMinutes),
+                  Icons.timer,
+                  theme,
+                ),
+                _statCard(
+                  'Pausas (Total)',
+                  '$_totalPauses',
+                  Icons.pause_circle_filled,
+                  theme,
+                ),
+                _statCard(
+                  'Hoje - Estudo',
+                  _formatTime(_todayStudyMinutes),
+                  Icons.today,
+                  theme,
+                ),
+                _statCard(
+                  'Hoje - Pausas',
+                  '$_todayPauses',
+                  Icons.pause_circle,
+                  theme,
+                ),
+                _statCard(
+                  'Semana - Estudo',
+                  _formatTime(_weekStudyMinutes),
+                  Icons.date_range,
+                  theme,
+                ),
+                _statCard(
+                  'Semana - Pausas',
+                  '$_weekPauses',
+                  Icons.schedule,
+                  theme,
+                ),
               ],
             ),
 
@@ -216,8 +263,10 @@ class _ProgressPageState extends State<ProgressPage> {
 
             const SizedBox(height: 16),
 
-            const Text('Tempo de estudo e pausas por dia da semana',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const Text(
+              'Tempo de estudo e pausas por dia da semana',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
 
             const SizedBox(height: 16),
 
@@ -239,8 +288,12 @@ class _ProgressPageState extends State<ProgressPage> {
                 icon: const Icon(Icons.refresh),
                 label: const Text('Atualizar'),
                 style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  backgroundColor: theme.colorScheme.primaryContainer.withOpacity(0.3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                  backgroundColor: theme.colorScheme.primaryContainer
+                      .withOpacity(0.3),
                   foregroundColor: theme.colorScheme.onPrimary,
                 ),
               ),
@@ -262,10 +315,22 @@ class _ProgressPageState extends State<ProgressPage> {
           children: [
             Icon(icon, size: 28, color: theme.colorScheme.onPrimary),
             const SizedBox(height: 8),
-            Text(value,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
             const SizedBox(height: 4),
-            Text(title, style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurface.withOpacity(0.7))),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 12,
+                color: theme.colorScheme.onSurface.withOpacity(0.7),
+              ),
+            ),
           ],
         ),
       ),
@@ -286,70 +351,26 @@ class _ProgressPageState extends State<ProgressPage> {
         final pauseHeight = (_dailyPauses[i] / maxValue) * 140;
         final isToday = DateTime.now().weekday % 7 == i;
         // Mover a lógica visual para um widget separado
-        Widget buildStudyPauseBar(ThemeData theme, int studyMinutes, int pauses, String day, bool isToday, double maxValue) {
-          final studyHeight = (studyMinutes / maxValue) * 140;
-          final pauseHeight = (pauses / maxValue) * 140;
-
-          return Column(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              if (studyMinutes > 0)
-                Text(
-                  _formatTime(studyMinutes),
-                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
-                ),
-              if (pauses > 0)
-                Text(
-                  '$pauses pausas',
-                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: theme.colorScheme.secondary),
-                ),
-              const SizedBox(height: 4),
-              Stack(
-                alignment: Alignment.bottomCenter,
-                children: [
-                  Container(
-                    width: 30,
-                    height: pauseHeight.clamp(4.0, 140.0),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.secondary.withOpacity(0.7),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                  ),
-                  Container(
-                    width: 30,
-                    height: studyHeight.clamp(4.0, 140.0),
-                    decoration: BoxDecoration(
-                      color: isToday ? theme.colorScheme.primary : theme.colorScheme.primary.withOpacity(0.7),
-                      borderRadius: BorderRadius.circular(6),
-                      border: isToday ? Border.all(color: theme.colorScheme.secondary, width: 2) : null,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                day,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
-                  color: isToday ? theme.colorScheme.primary : theme.colorScheme.onSurface,
-                ),
-              ),
-            ],
-          );
-        }
         return Column(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
             if (_dailyStudyMinutes[i] > 0)
               Text(
                 _formatTime(_dailyStudyMinutes[i]),
-                style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.primary,
+                ),
               ),
             if (_dailyPauses[i] > 0)
               Text(
                 '${_dailyPauses[i]} pausas',
-                style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: theme.colorScheme.secondary),
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.secondary,
+                ),
               ),
             const SizedBox(height: 4),
             Stack(
@@ -367,10 +388,15 @@ class _ProgressPageState extends State<ProgressPage> {
                   width: 30,
                   height: studyHeight.clamp(4.0, 140.0),
                   decoration: BoxDecoration(
-                    color: isToday ? theme.colorScheme.primary : theme.colorScheme.primary.withOpacity(0.7),
+                    color: isToday
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.primary.withOpacity(0.7),
                     borderRadius: BorderRadius.circular(6),
                     border: isToday
-                        ? Border.all(color: theme.colorScheme.secondary, width: 2)
+                        ? Border.all(
+                            color: theme.colorScheme.secondary,
+                            width: 2,
+                          )
                         : null,
                   ),
                 ),
@@ -382,7 +408,9 @@ class _ProgressPageState extends State<ProgressPage> {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
-                color: isToday ? theme.colorScheme.primary : theme.colorScheme.onSurface,
+                color: isToday
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.onSurface,
               ),
             ),
           ],

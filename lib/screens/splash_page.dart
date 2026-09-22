@@ -12,7 +12,7 @@ class SplashPage extends StatefulWidget {
 class _SplashPageState extends State<SplashPage>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
-  late Animation<double> _circleAnim;
+  late Animation<double> _radiusAnim;
   late Animation<double> _fadeAnim;
   late Animation<Offset> _slideAnim;
   late Offset _tapPosition;
@@ -36,30 +36,33 @@ class _SplashPageState extends State<SplashPage>
         _backgroundImages[Random().nextInt(_backgroundImages.length)];
 
     _controller = AnimationController(
-      duration: Duration(milliseconds: 3500),
+      duration: const Duration(milliseconds: 600),
       vsync: this,
     );
 
-    _circleAnim = Tween(
+    _radiusAnim = Tween(
       begin: 0.0,
-      end: 2.5,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+      end: 2.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOutSine));
 
     _fadeAnim = Tween(
-      begin: 2.0,
+      begin: 1.0,
       end: 0.0,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeIn));
 
     _slideAnim = Tween<Offset>(
       begin: Offset.zero,
-      end: Offset(0, -1.5),
+      end: const Offset(0, -1.5),
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
 
     _controller.addStatusListener((status) {
       if (status == AnimationStatus.completed && mounted) {
         Navigator.pushReplacement(
           context,
-          PageRouteBuilder(pageBuilder: (_, __, ___) => HomePage()),
+          PageRouteBuilder(
+            transitionDuration: Duration.zero,
+            pageBuilder: (_, __, ___) => const HomePage(),
+          ),
         );
       }
     });
@@ -96,19 +99,13 @@ class _SplashPageState extends State<SplashPage>
     return Scaffold(
       body: Stack(
         children: [
-          Image.asset(
-            _selectedBackground,
-            fit: BoxFit.cover,
-            width: size.width,
-            height: size.height,
-          ),
-          HomePage(),
+          const HomePage(),
           if (!_showAnim)
             Container(
               decoration: BoxDecoration(
                 image: DecorationImage(
                   image: AssetImage(_selectedBackground),
-                  fit: BoxFit.fill,
+                  fit: BoxFit.cover,
                 ),
               ),
               width: size.width,
@@ -116,16 +113,30 @@ class _SplashPageState extends State<SplashPage>
             ),
           if (_showAnim)
             AnimatedBuilder(
-              animation: _circleAnim,
+              animation: _radiusAnim,
               builder: (_, __) {
-                final r = _circleAnim.value * (size.width + size.height);
-                return ClipPath(
-                  clipper: HoleClipper(center: _tapPosition, radius: r),
+                return ShaderMask(
+                  blendMode: BlendMode.dstOut,
+                  shaderCallback: (Rect bounds) {
+                    return RadialGradient(
+                      center: FractionalOffset(
+                        _tapPosition.dx / size.width,
+                        _tapPosition.dy / size.height,
+                      ),
+                      radius: _radiusAnim.value * 2.5,
+                      colors: [
+                        Colors.black,
+                        Colors.black.withOpacity(1.0 - _fadeAnim.value),
+                        Colors.transparent,
+                      ],
+                      stops: const [0.0, 0.5, 1.0],
+                    ).createShader(bounds);
+                  },
                   child: Container(
                     decoration: BoxDecoration(
                       image: DecorationImage(
                         image: AssetImage(_selectedBackground),
-                        fit: BoxFit.fill,
+                        fit: BoxFit.cover,
                       ),
                     ),
                   ),
@@ -176,7 +187,7 @@ class _SplashPageState extends State<SplashPage>
                       padding: const EdgeInsets.only(bottom: 100),
                       child: GestureDetector(
                         onTapDown: (d) => _startAnim(d.globalPosition),
-                        child: Icon(
+                        child: const Icon(
                           Icons.play_circle_rounded,
                           color: Colors.white,
                           size: 100,
@@ -205,24 +216,4 @@ class _SplashPageState extends State<SplashPage>
       ),
     );
   }
-}
-
-class HoleClipper extends CustomClipper<Path> {
-  final Offset center;
-  final double radius;
-
-  HoleClipper({required this.center, required this.radius});
-
-  @override
-  Path getClip(Size size) {
-    return Path.combine(
-      PathOperation.difference,
-      Path()..addRect(Rect.fromLTWH(0, 0, size.width, size.height)),
-      Path()..addOval(Rect.fromCircle(center: center, radius: radius)),
-    );
-  }
-
-  @override
-  bool shouldReclip(HoleClipper old) =>
-      radius != old.radius || center != old.center;
 }

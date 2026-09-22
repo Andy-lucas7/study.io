@@ -1,7 +1,9 @@
+import 'dart:ui';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import '../widgets/glass_container.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -41,7 +43,7 @@ class _SummaryPageState extends State<SummaryPage> {
         final List<dynamic> jsonList = jsonDecode(jsonString);
         setState(() {
           _summaries = jsonList.map((json) {
-            final summary = Summary.fromDoc(json);
+            final summary = Summary.fromMap(json);
             if (json['audioPath'] != null) {
               summary.audioPath = json['audioPath'];
             }
@@ -57,7 +59,7 @@ class _SummaryPageState extends State<SummaryPage> {
         final List<dynamic> jsonList = jsonDecode(jsonString);
         setState(() {
           _summaries = jsonList.map((json) {
-            final summary = Summary.fromDoc(json);
+            final summary = Summary.fromMap(json);
             if (json['audioPath'] != null) {
               summary.audioPath = json['audioPath'];
             }
@@ -241,6 +243,7 @@ ${summary.content}''';
             )
           : Padding(
               padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(8),
               child: GridView.count(
                 crossAxisCount: 2,
                 crossAxisSpacing: 12,
@@ -359,9 +362,7 @@ ${summary.content}''';
 
 class _SummaryDetailsDialog extends StatefulWidget {
   final Summary summary;
-
   const _SummaryDetailsDialog({required this.summary});
-
   @override
   State<_SummaryDetailsDialog> createState() => _SummaryDetailsDialogState();
 }
@@ -393,43 +394,101 @@ class _SummaryDetailsDialogState extends State<_SummaryDetailsDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(widget.summary.title.isEmpty ? 'Sem título' : widget.summary.title),
-      content: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              widget.summary.description.isEmpty ? 'Sem descrição' : widget.summary.description,
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 12),
-            Text(widget.summary.content),
-            if (widget.summary.audioPath != null) ...[
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  IconButton(
-                    icon: Icon(_isPlaying ? Icons.pause : Icons.play_arrow),
-                    onPressed: _togglePlayPause,
-                  ),
-                  const Text('Áudio gravado'),
-                ],
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.2),
+                width: 1.5,
               ),
-            ],
-          ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.summary.title.isEmpty
+                      ? 'Sem ttulo'
+                      : widget.summary.title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                if (widget.summary.description.isNotEmpty) ...[
+                  Text(
+                    widget.summary.description,
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.8),
+                      fontSize: 16,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                Text(
+                  widget.summary.content,
+                  style: const TextStyle(color: Colors.white, fontSize: 16),
+                ),
+                if (widget.summary.audioPath != null) ...[
+                  const SizedBox(height: 24),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      children: [
+                        IconButton(
+                          icon: Icon(
+                            _isPlaying ? Icons.pause : Icons.play_arrow,
+                            color: Colors.white,
+                          ),
+                          onPressed: _togglePlayPause,
+                        ),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'Áudio gravado',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 24),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text(
+                      'FECHAR',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Fechar'),
-        ),
-      ],
     );
   }
 }
-
 
 class SummaryDialog extends StatefulWidget {
   final Summary? summary;
@@ -452,7 +511,6 @@ class _SummaryDialogState extends State<SummaryDialog> {
   bool _isRecording = false;
   bool _isPlaying = false;
   String? _audioFilePath;
-  bool _hasUnsavedAudio = false;
 
   @override
   void initState() {
@@ -486,54 +544,22 @@ class _SummaryDialogState extends State<SummaryDialog> {
     _audioRecorder.dispose();
   }
 
+  String _sanitizeFileName(String name) {
+    return name.replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '_');
+  }
+
   Future<bool> _checkAudioPermission() async {
-    if (kIsWeb) {
-      return true; // Web não requer permissão explícita para microfone em HTTPS
-    }
+    if (kIsWeb) return true;
     var status = await Permission.microphone.status;
-    if (status.isGranted) {
-      return true;
-    } else {
-      status = await Permission.microphone.request();
-      return status.isGranted;
-    }
+    if (status.isGranted) return true;
+    status = await Permission.microphone.request();
+    return status.isGranted;
   }
 
   Future<void> _toggleRecording() async {
-    if (kIsWeb) {
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Aviso'),
-          content: const Text('Gravação de áudio não suportada no web.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('OK'),
-            ),
-          ],
-        ),
-      );
-      return;
-    }
-
+    if (kIsWeb) return;
     final hasPermission = await _checkAudioPermission();
-    if (!hasPermission) {
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Permissão Negada'),
-          content: const Text('Permissão de microfone negada.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('OK'),
-            ),
-          ],
-        ),
-      );
-      return;
-    }
+    if (!hasPermission) return;
 
     try {
       if (!_isRecording) {
@@ -552,420 +578,214 @@ class _SummaryDialogState extends State<SummaryDialog> {
           setState(() {
             _isRecording = true;
             _audioFilePath = newAudioPath;
-            _hasUnsavedAudio = true;
             _audioFileNameController.text = fileName;
           });
-
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Row(
-                  children: [
-                    const Icon(Icons.mic, color: Colors.white),
-                    const SizedBox(width: 8),
-                    Text('Gravação iniciada em: $newAudioPath'),
-                  ],
-                ),
-                backgroundColor: Colors.green,
-                duration: const Duration(seconds: 2),
-              ),
-            );
-          }
         }
       } else {
-        final path = await _audioRecorder.stop();
-        setState(() {
-          _isRecording = false;
-        });
-
-        if (path != null && mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  const Icon(Icons.check_circle, color: Colors.white),
-                  const SizedBox(width: 8),
-                  Expanded(child: Text('Áudio salvo em: $path')),
-                ],
-              ),
-              backgroundColor: Colors.blue,
-              duration: const Duration(seconds: 3),
-            ),
-          );
-        }
+        await _audioRecorder.stop();
+        setState(() => _isRecording = false);
       }
     } catch (e) {
-      setState(() {
-        _isRecording = false;
-      });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erro na gravação: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      setState(() => _isRecording = false);
     }
   }
 
   Future<void> _togglePlayback() async {
-    if (_audioFilePath == null || kIsWeb) {
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Aviso'),
-          content: const Text('Reprodução de áudio não suportada no web.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('OK'),
-            ),
-          ],
-        ),
-      );
-      return;
-    }
-
-    try {
-      if (_isPlaying) {
-        await _audioPlayer.pause();
-        setState(() => _isPlaying = false);
-      } else {
+    if (_isPlaying) {
+      await _audioPlayer.pause();
+      setState(() => _isPlaying = false);
+    } else {
+      if (_audioFilePath != null) {
         await _audioPlayer.play(DeviceFileSource(_audioFilePath!));
         setState(() => _isPlaying = true);
         _audioPlayer.onPlayerComplete.listen((event) {
           setState(() => _isPlaying = false);
         });
       }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erro ao reproduzir áudio: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
     }
   }
 
-  Future<void> _deleteAudioAndContent() async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Confirmar exclusão'),
-        content: const Text(
-          'Deseja apagar o conteúdo de texto e áudio? Esta ação não pode ser desfeita.',
+  Widget _buildTextField(
+    TextEditingController controller,
+    String label, {
+    int maxLines = 1,
+    IconData? icon,
+  }) {
+    return TextField(
+      controller: controller,
+      maxLines: maxLines,
+      style: const TextStyle(color: Colors.white),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
+        prefixIcon: icon != null
+            ? Icon(icon, color: Colors.white.withOpacity(0.7))
+            : null,
+        enabledBorder: UnderlineInputBorder(
+          borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Apagar', style: TextStyle(color: Colors.red)),
-          ),
-        ],
+        focusedBorder: const UnderlineInputBorder(
+          borderSide: BorderSide(color: Colors.white),
+        ),
       ),
     );
-
-    if (confirm == true) {
-      if (_isRecording) {
-        await _audioRecorder.stop();
-        setState(() => _isRecording = false);
-      }
-
-      if (_isPlaying) {
-        await _audioPlayer.stop();
-        setState(() => _isPlaying = false);
-      }
-
-      if (_audioFilePath != null && !kIsWeb) {
-        final audioFile = File(_audioFilePath!);
-        if (await audioFile.exists()) {
-          await audioFile.delete();
-        }
-      }
-
-      setState(() {
-        _contentController.clear();
-        _audioFilePath = null;
-        _hasUnsavedAudio = false;
-        _audioFileNameController.clear();
-      });
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Conteúdo e áudio apagados'),
-            backgroundColor: Colors.orange,
-          ),
-        );
-      }
-    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        if (_isRecording) {
-          await _audioRecorder.stop();
-          setState(() => _isRecording = false);
-        }
-        if (_isPlaying) {
-          await _audioPlayer.stop();
-          setState(() => _isPlaying = false);
-        }
-        return true;
-      },
-      child: AlertDialog(
-        title: Text(widget.summary == null ? 'Novo Resumo' : 'Editar Resumo'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              TextField(
-                controller: _titleController,
-                decoration: const InputDecoration(
-                  labelText: 'Título',
-                  border: OutlineInputBorder(),
-                ),
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.2),
+                width: 1.5,
               ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _descriptionController,
-                decoration: const InputDecoration(
-                  labelText: 'Descrição (opcional)',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 20),
-              if (!kIsWeb) ...[
-                TextField(
-                  controller: _audioFileNameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Nome do arquivo de áudio (opcional)',
-                    border: OutlineInputBorder(),
-                    hintText: 'Ex: resumo_audio',
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: _isRecording
-                        ? Colors.red.shade50
-                        : Colors.blue.shade50,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: _isRecording
-                          ? Colors.red.shade200
-                          : Colors.blue.shade200,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    widget.summary == null ? 'NOVO RESUMO' : 'EDITAR RESUMO',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      letterSpacing: 2,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  child: Column(
-                    children: [
-                      Icon(
-                        _isRecording ? Icons.mic : Icons.mic_none,
-                        size: 32,
-                        color: _isRecording ? Colors.red : Colors.blue,
+                  const SizedBox(height: 24),
+                  _buildTextField(
+                    _titleController,
+                    'Título',
+                    icon: HugeIcons.strokeRoundedBook02,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    _descriptionController,
+                    'Descrição (opcional)',
+                  ),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    _contentController,
+                    'Conteúdo (texto)',
+                    maxLines: 5,
+                  ),
+                  const SizedBox(height: 24),
+                  if (!kIsWeb) ...[
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                      child: Column(
                         children: [
-                          ElevatedButton.icon(
-                            onPressed: _toggleRecording,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: _isRecording
-                                  ? Colors.red
-                                  : Theme.of(context).colorScheme.primary,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(25),
-                              ),
-                            ),
-                            icon: Icon(_isRecording ? Icons.stop : Icons.mic),
-                            label: Text(
-                              _isRecording ? 'Parar gravação' : 'Gravar áudio',
-                            ),
-                          ),
-                          if (_audioFilePath != null) ...[
-                            const SizedBox(width: 8),
-                            ElevatedButton.icon(
-                              onPressed: _togglePlayback,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: _isPlaying
-                                    ? Colors.orange
-                                    : Theme.of(context).colorScheme.secondary,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 12,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(25),
-                                ),
-                              ),
-                              icon: Icon(
-                                _isPlaying ? Icons.pause : Icons.play_arrow,
-                              ),
-                              label: Text(_isPlaying ? 'Pausar' : 'Reproduzir'),
-                            ),
-                          ],
-                        ],
-                      ),
-                      if (_audioFilePath != null) ...[
-                        const SizedBox(height: 8),
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.green.shade100,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
-                              Icon(
-                                Icons.audiotrack,
-                                color: Colors.green.shade700,
-                                size: 16,
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  'Áudio: ${_audioFilePath!.split('/').last}\nSalvo em: $_audioFilePath',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.green.shade700,
-                                    fontWeight: FontWeight.w500,
+                              ElevatedButton.icon(
+                                onPressed: _toggleRecording,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: _isRecording
+                                      ? Colors.red
+                                      : Colors.white.withOpacity(0.2),
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20),
                                   ),
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 2,
                                 ),
+                                icon: Icon(
+                                  _isRecording ? Icons.stop : Icons.mic,
+                                ),
+                                label: Text(_isRecording ? 'Parar' : 'Gravar'),
                               ),
+                              if (_audioFilePath != null)
+                                ElevatedButton.icon(
+                                  onPressed: _togglePlayback,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: _isPlaying
+                                        ? Colors.orange
+                                        : Colors.white.withOpacity(0.2),
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                  ),
+                                  icon: Icon(
+                                    _isPlaying ? Icons.pause : Icons.play_arrow,
+                                  ),
+                                  label: Text(_isPlaying ? 'Pausar' : 'Ouvir'),
+                                ),
                             ],
                           ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ],
-              const SizedBox(height: 20),
-              TextField(
-                controller: _contentController,
-                decoration: const InputDecoration(
-                  labelText: 'Conteúdo (texto)',
-                  border: OutlineInputBorder(),
-                  alignLabelWithHint: true,
-                ),
-                maxLines: 5,
-              ),
-              const SizedBox(height: 16),
-              if (_contentController.text.isNotEmpty || _audioFilePath != null)
-                SizedBox(
-                  width: double.infinity,
-                  child: TextButton.icon(
-                    onPressed: _deleteAudioAndContent,
-                    style: TextButton.styleFrom(
-                      foregroundColor: Colors.red,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                        ],
+                      ),
                     ),
-                    icon: const Icon(Icons.delete_sweep),
-                    label: const Text('Limpar conteúdo e áudio'),
-                  ),
-                ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () async {
-              if (_isRecording) {
-                await _audioRecorder.stop();
-                setState(() => _isRecording = false);
-              }
-              if (_isPlaying) {
-                await _audioPlayer.stop();
-                setState(() => _isPlaying = false);
-              }
-              Navigator.pop(context);
-            },
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              if (_titleController.text.trim().isEmpty &&
-                  _contentController.text.trim().isEmpty &&
-                  _audioFilePath == null) {
-                await showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('Aviso'),
-                    content: const Text(
-                      'Insira pelo menos um título, texto ou grave um áudio.',
-                    ),
-                    actions: [
+                  ],
+                  const SizedBox(height: 32),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
                       TextButton(
                         onPressed: () => Navigator.pop(context),
-                        child: const Text('OK'),
+                        child: Text(
+                          'CANCELAR',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.7),
+                          ),
+                        ),
+                      ),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white.withOpacity(0.2),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: () {
+                          final newSummary = Summary(
+                            id:
+                                widget.summary?.id ??
+                                DateTime.now().millisecondsSinceEpoch
+                                    .toString(),
+                            title: _titleController.text.trim().isEmpty
+                                ? 'Resumo'
+                                : _titleController.text.trim(),
+                            description: _descriptionController.text.trim(),
+                            content: _contentController.text.trim(),
+                            createdAt:
+                                widget.summary?.createdAt ?? DateTime.now(),
+                          );
+                          newSummary.audioPath = _audioFilePath;
+                          widget.onSave(newSummary);
+                          Navigator.pop(context);
+                        },
+                        child: const Text(
+                          'SALVAR',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ],
                   ),
-                );
-                return;
-              }
-
-              if (_isRecording) {
-                await _audioRecorder.stop();
-                setState(() => _isRecording = false);
-              }
-
-              if (_isPlaying) {
-                await _audioPlayer.stop();
-                setState(() => _isPlaying = false);
-              }
-
-              final newSummary = Summary(
-                id:
-                    widget.summary?.id ??
-                    DateTime.now().millisecondsSinceEpoch.toString(),
-                title: _titleController.text.trim().isEmpty
-                    ? 'Resumo ${DateTime.now().day}/${DateTime.now().month}'
-                    : _titleController.text.trim(),
-                description: _descriptionController.text.trim(),
-                content: _contentController.text.trim(),
-                createdAt: widget.summary?.createdAt ?? DateTime.now(),
-              );
-
-              newSummary.audioPath = _audioFilePath;
-
-              widget.onSave(newSummary);
-              Navigator.pop(context);
-
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    widget.summary == null
-                        ? 'Resumo criado com sucesso!'
-                        : 'Resumo atualizado com sucesso!',
-                  ),
-                  backgroundColor: Colors.green,
-                ),
-              );
-            },
-            child: const Text('Salvar'),
+                ],
+              ),
+            ),
           ),
-        ],
+        ),
       ),
     );
   }

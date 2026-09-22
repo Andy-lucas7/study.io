@@ -1,8 +1,6 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 class Metric {
   final String? id;
-  final String date;
+  final String date; // Formato AAAA-MM-DD
   final int studyMinutes;
   final int pauses;
   final String environment;
@@ -17,6 +15,7 @@ class Metric {
 
   Map<String, dynamic> toMap() {
     return {
+      if (id != null) 'id': id,
       'date': date,
       'studyMinutes': studyMinutes,
       'pauses': pauses,
@@ -24,30 +23,17 @@ class Metric {
     };
   }
 
-  factory Metric.fromDoc(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+  factory Metric.fromMap(Map<String, dynamic> map) {
     return Metric(
-      id: doc.id,
-      date: data['date'] ?? '',
-      studyMinutes: data['studyMinutes'] ?? 0,
-      pauses: data['pauses'] ?? 0,
-      environment: data['environment'] ?? '',
+      id: map['id']?.toString(),
+      date: map['date'] ?? '',
+      studyMinutes: map['studyMinutes'] ?? 0,
+      pauses: map['pauses'] ?? 0,
+      environment: map['environment'] ?? '',
     );
   }
 
-  final CollectionReference _metricCollection = FirebaseFirestore.instance.collection('metrics');
-
-  Future<void> save() async {
-    if (id == null) {
-      await _metricCollection.add(toMap());
-    } else {
-      await _metricCollection.doc(id).set(toMap());
-    }
-  }
-
-  Future<void> delete() async {
-    if (id != null) {
-      await _metricCollection.doc(id).delete();
-    }
+  factory Metric.fromDoc(dynamic doc) {
+    return Metric.fromMap(doc);
   }
 }

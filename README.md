@@ -4,13 +4,12 @@
 
 <p align="center">
   <b>Elevate your continuous learning experience.</b><br>
-  <i>A full-stack web application to organize, track, and manage your study goals.</i>
+  <i>A Flutter application to organize, track, and manage your study goals.</i>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Stack-Full%20Stack-blueviolet.svg" alt="Full Stack" />
-  <img src="https://img.shields.io/badge/Frontend-React-61DAFB.svg" alt="React" />
-  <img src="https://img.shields.io/badge/Database-PostgreSQL-336791.svg" alt="PostgreSQL" />
+  <img src="https://img.shields.io/badge/Mobile-Flutter-02569B.svg" alt="Flutter" />
+  <img src="https://img.shields.io/badge/Language-Dart-0175C2.svg" alt="Dart" />
 </p>
 
 ---
@@ -29,17 +28,15 @@
 
 ## 🛠️ Tech Stack
 
-*   **Frontend**: React, JavaScript/TypeScript, CSS/Styled Components
-*   **Backend**: Node.js / Express (or corresponding backend language)
-*   **Database**: PostgreSQL
-*   **Tools**: Git, Docker (optional for local DB setup)
+*   **Framework**: Flutter
+*   **Language**: Dart
+*   **Storage**: Firebase (Firestore, Storage) / SharedPreferences
 
 ## 🚀 Getting Started
 
 ### Prerequisites
-*   Node.js (v16 or higher)
-*   npm or yarn
-*   PostgreSQL running locally
+*   Flutter SDK (v3.10 or higher)
+*   Dart SDK
 
 ### Installation & Setup
 
@@ -49,34 +46,19 @@
    cd study.io
    ```
 
-2. Install dependencies for the backend
+2. Install dependencies
    ```sh
-   cd backend
-   npm install
+   flutter pub get
    ```
 
-3. Configure Environment Variables
-   Create a `.env` file in the root of your backend directory and add your database credentials:
-   ```env
-   DATABASE_URL=postgres://user:password@localhost:5432/studyio
-   PORT=5000
-   ```
-
-4. Install dependencies for the frontend
+3. Run the application
    ```sh
-   cd ../frontend
-   npm install
-   ```
-
-5. Run the application
-   You can run the frontend and backend concurrently:
-   ```sh
-   npm run dev
+   flutter run
    ```
 
 ## 🧠 What I Learned
 
-Building Study.io was an excellent exercise in full-stack engineering. It challenged me to design a normalized relational database schema, build a robust API, and consume it through a dynamic React frontend with complex state management. Connecting the dots between database performance, backend logic, and user interface responsiveness was the core focus of this project.
+Building Study.io was an excellent exercise in Flutter mobile engineering. It challenged me to design a robust database schema with Firebase Firestore, build intuitive UI/UX, and manage complex state using Provider.
 
 ---
 <p align="center">Made with ❤️ by Lucas Andrey</p>

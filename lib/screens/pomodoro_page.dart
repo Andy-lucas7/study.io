@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:study_io/core/app_config.dart';
 import '../notifiers/pomodoro_notifier.dart';
 import '../services/database_service.dart';
+import '../widgets/timer_painter.dart';
 import '../widgets/settings_drawer.dart';
 
 class PomodoroPage extends StatelessWidget {
@@ -185,19 +186,17 @@ class PomodoroPage extends StatelessWidget {
                     alignment: Alignment.center,
                     children: [
                       SizedBox(
-                        width: 250,
-                        height: 250,
-                        child: CircularProgressIndicator(
-                          value: pomodoroNotifier.remaining == Duration.zero
-                              ? 0.0
-                              : pomodoroNotifier.getProgress(),
-                          strokeWidth: 16,
-                          valueColor: AlwaysStoppedAnimation(
-                            currentTheme.colorScheme.primary,
+                        width: 280,
+                        height: 280,
+                        child: CustomPaint(
+                          size: const Size(280, 280),
+                          painter: TimerPainter(
+                            progress: pomodoroNotifier.remaining == Duration.zero
+                                ? 1.0
+                                : pomodoroNotifier.getProgress(),
+                            backgroundColor: currentTheme.colorScheme.primary.withOpacity(0.15),
+                            progressColor: currentTheme.colorScheme.primary,
                           ),
-                          backgroundColor: currentTheme.colorScheme.primary
-                              .withOpacity(0.3),
-                          strokeCap: StrokeCap.round,
                         ),
                       ),
                       Column(

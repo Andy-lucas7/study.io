@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/task.dart';
@@ -48,10 +49,14 @@ class AboutTaskPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final backgroundImagePath = context
+        .watch<EnvironmentNotifier>()
+        .backgroundImagePath;
     final theme = context.watch<EnvironmentNotifier>().currentTheme;
 
     return Scaffold(
       backgroundColor: AppConfig.background,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         centerTitle: true,
@@ -60,6 +65,8 @@ class AboutTaskPage extends StatelessWidget {
           icon: Icon(HugeIcons.strokeRoundedArrowLeft01, size: 34),
           onPressed: () => Navigator.pop(context),
         ),
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -84,6 +91,102 @@ class AboutTaskPage extends StatelessWidget {
                     HugeIcons.strokeRoundedCalendar04,
                     size: 18,
                     color: theme.colorScheme.primary,
+      body: Stack(
+        children: [
+          // Background
+          Positioned.fill(
+            child: backgroundImagePath.isNotEmpty
+                ? Image.asset(backgroundImagePath, fit: BoxFit.cover)
+                : Container(color: AppConfig.background),
+          ),
+          // Glass Box
+          Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(24),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                  child: Container(
+                    padding: const EdgeInsets.all(32),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.2),
+                        width: 1.5,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.2),
+                          blurRadius: 30,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Center(
+                          child: Text(
+                            'DETALHES DA TAREFA',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              letterSpacing: 2,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+                        Text(
+                          task.title,
+                          style: AppConfig().quicksandTitle.copyWith(fontSize: 28),
+                        ),
+                        const SizedBox(height: 12),
+                        if (task.description.isNotEmpty) ...[
+                          Text(
+                            task.description,
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 16,
+                              height: 1.5,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                        ],
+                        Divider(color: Colors.white.withOpacity(0.2)),
+                        const SizedBox(height: 16),
+                        _buildDetailRow(
+                          icon: HugeIcons.strokeRoundedCalendar04,
+                          iconColor: theme.colorScheme.primary,
+                          label: 'Data',
+                          value: DateFormat('dd/MM/yyyy').format(task.date),
+                        ),
+                        const SizedBox(height: 16),
+                        _buildDetailRow(
+                          icon: HugeIcons.strokeRoundedTime03,
+                          iconColor: theme.colorScheme.primary,
+                          label: 'Período',
+                          value: _getHourPeriod(task.startTime, task.endTime),
+                        ),
+                        const SizedBox(height: 16),
+                        _buildDetailRow(
+                          icon: Icons.check_circle_outline,
+                          iconColor: task.completed ? Colors.green : Colors.white54,
+                          label: 'Status',
+                          value: task.completed ? 'Concluída' : 'Pendente',
+                        ),
+                        const SizedBox(height: 16),
+                        _buildDetailRow(
+                          icon: Icons.priority_high_rounded,
+                          iconColor: _getPriority(task.priority),
+                          label: 'Prioridade',
+                          value: _getPriorityText(task.priority),
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(width: 8),
                   Text(
@@ -91,6 +194,7 @@ class AboutTaskPage extends StatelessWidget {
                     style: AppConfig().roboto,
                   ),
                 ],
+                ),
               ),
               const SizedBox(height: 12),
               Row(
@@ -140,14 +244,42 @@ class AboutTaskPage extends StatelessWidget {
                 ],
               ),
             ],
+            ),
           ),
         ),
+        ],
       ),
     );
   }
-  String _formatDate(DateTime date) {
-    return '${date.day.toString().padLeft(2, '0')}/'
-        '${date.month.toString().padLeft(2, '0')}/'
-        '${date.year}';
+
+  Widget _buildDetailRow({
+    required IconData icon,
+    required Color iconColor,
+    required String label,
+    required String value,
+  }) {
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: iconColor),
+        const SizedBox(width: 12),
+        Text(
+          '$label: ',
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.5),
+            fontSize: 14,
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }
