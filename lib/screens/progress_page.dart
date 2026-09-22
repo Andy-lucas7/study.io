@@ -161,7 +161,6 @@ class _ProgressPageState extends State<ProgressPage> {
       ),
       drawer: const SettingsDrawer(),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
         padding: const EdgeInsets.all(8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

@@ -242,7 +242,6 @@ ${summary.content}''';
               ),
             )
           : Padding(
-              padding: const EdgeInsets.all(16),
               padding: const EdgeInsets.all(8),
               child: GridView.count(
                 crossAxisCount: 2,

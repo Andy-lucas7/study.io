@@ -55,42 +55,12 @@ class AboutTaskPage extends StatelessWidget {
     final theme = context.watch<EnvironmentNotifier>().currentTheme;
 
     return Scaffold(
-      backgroundColor: AppConfig.background,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
-        centerTitle: true,
-        title: Text('Detalhes da Tarefa', style: AppConfig().montserratTitle),
-        leading: IconButton(
-          icon: Icon(HugeIcons.strokeRoundedArrowLeft01, size: 34),
-          onPressed: () => Navigator.pop(context),
-        ),
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 20),
-              Text(
-                task.title,
-                style: AppConfig().quicksandTitle.copyWith(fontSize: 34),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                task.description,
-                style: AppConfig().montserratTitle.copyWith(fontSize: 18),
-              ),
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  Icon(
-                    HugeIcons.strokeRoundedCalendar04,
-                    size: 18,
-                    color: theme.colorScheme.primary,
       body: Stack(
         children: [
           // Background
@@ -142,7 +112,9 @@ class AboutTaskPage extends StatelessWidget {
                         const SizedBox(height: 32),
                         Text(
                           task.title,
-                          style: AppConfig().quicksandTitle.copyWith(fontSize: 28),
+                          style: AppConfig().quicksandTitle.copyWith(
+                            fontSize: 28,
+                          ),
                         ),
                         const SizedBox(height: 12),
                         if (task.description.isNotEmpty) ...[
@@ -174,7 +146,9 @@ class AboutTaskPage extends StatelessWidget {
                         const SizedBox(height: 16),
                         _buildDetailRow(
                           icon: Icons.check_circle_outline,
-                          iconColor: task.completed ? Colors.green : Colors.white54,
+                          iconColor: task.completed
+                              ? Colors.green
+                              : Colors.white54,
                           label: 'Status',
                           value: task.completed ? 'Concluída' : 'Pendente',
                         ),
@@ -188,65 +162,10 @@ class AboutTaskPage extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Data: ${DateFormat('dd/MM/yyyy').format(task.date)}',
-                    style: AppConfig().roboto,
-                  ),
-                ],
                 ),
               ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Icon(
-                    Icons.check_circle,
-                    size: 18,
-                    color: task.completed
-                        ? Colors.green
-                        : theme.colorScheme.onSurface.withOpacity(0.5),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    task.completed ? 'Concluída' : 'Pendente',
-                    style: AppConfig().roboto,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Icon(
-                    Icons.priority_high_rounded,
-                    size: 18,
-                    color: _getPriority(task.priority),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Prioridade: ${_getPriorityText(task.priority)}',
-                    style: AppConfig().roboto,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Icon(
-                    HugeIcons.strokeRoundedTime03,
-                    size: 18,
-                    color: theme.colorScheme.primary,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Período: ${_getHourPeriod(task.startTime, task.endTime)}',
-                    style: AppConfig().roboto,
-                  ),
-                ],
-              ),
-            ],
             ),
           ),
-        ),
         ],
       ),
     );
@@ -264,10 +183,7 @@ class AboutTaskPage extends StatelessWidget {
         const SizedBox(width: 12),
         Text(
           '$label: ',
-          style: TextStyle(
-            color: Colors.white.withOpacity(0.5),
-            fontSize: 14,
-          ),
+          style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 14),
         ),
         Expanded(
           child: Text(

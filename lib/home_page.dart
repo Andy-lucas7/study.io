@@ -140,7 +140,6 @@ class _HomePageState extends State<HomePage> {
           ),
           bottomNavigationBar: SafeArea(
             child: Container(
-              margin: const EdgeInsets.only(left: 24, right: 24, bottom: 16),
               margin: const EdgeInsets.only(left: 8, right: 8, bottom: 16),
               height: 72,
               decoration: BoxDecoration(

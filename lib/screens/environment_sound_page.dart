@@ -121,7 +121,6 @@ class EnvironmentSoundPage extends StatelessWidget {
       ),
       drawer: const SettingsDrawer(),
       body: Padding(
-        padding: const EdgeInsets.all(12),
         padding: const EdgeInsets.all(8),
         child: GridView.count(
           crossAxisCount: 2,
