@@ -159,15 +159,15 @@ class _HomePageState extends State<HomePage> {
                 children: _pages,
               ),
               Positioned(
-                top: MediaQuery.of(context).padding.top + 6,
-                left: 12,
+                top: MediaQuery.of(context).padding.top + 4,
+                left: 4,
                 child: Opacity(
                   opacity: _iconOpacity,
                   child: IconButton(
                     icon: Image.asset(
                       'assets/icon/Icon_fill.png',
-                      width: 28,
-                      height: 28,
+                      width: 42,
+                      height: 42,
                     ),
                     onPressed: () => _scaffoldKey.currentState?.openDrawer(),
                   ),
