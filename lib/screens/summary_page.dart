@@ -214,14 +214,7 @@ ${summary.content}''';
         elevation: 0,
         centerTitle: true,
         title: Text('Resumos', style: AppConfig().montserratTitle.copyWith()),
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: Image.asset('assets/icon/Icon_fill.png'),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
-        ),
       ),
-      drawer: const SettingsDrawer(),
       body: _summaries.isEmpty
           ? const Center(
               child: Column(
@@ -410,77 +403,84 @@ class _SummaryDetailsDialogState extends State<_SummaryDetailsDialog> {
                 width: 1.5,
               ),
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  widget.summary.title.isEmpty
-                      ? 'Sem ttulo'
-                      : widget.summary.title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                if (widget.summary.description.isNotEmpty) ...[
-                  Text(
-                    widget.summary.description,
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.8),
-                      fontSize: 16,
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                ],
-                Text(
-                  widget.summary.content,
-                  style: const TextStyle(color: Colors.white, fontSize: 16),
-                ),
-                if (widget.summary.audioPath != null) ...[
-                  const SizedBox(height: 24),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Row(
-                      children: [
-                        IconButton(
-                          icon: Icon(
-                            _isPlaying ? Icons.pause : Icons.play_arrow,
-                            color: Colors.white,
-                          ),
-                          onPressed: _togglePlayPause,
-                        ),
-                        const SizedBox(width: 8),
-                        const Text(
-                          'Áudio gravado',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 24),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text(
-                      'FECHAR',
-                      style: TextStyle(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.7,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.summary.title.isEmpty
+                          ? 'Sem ttulo'
+                          : widget.summary.title,
+                      style: const TextStyle(
                         color: Colors.white,
+                        fontSize: 22,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                  ),
+                    const SizedBox(height: 16),
+                    if (widget.summary.description.isNotEmpty) ...[
+                      Text(
+                        widget.summary.description,
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.8),
+                          fontSize: 16,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                    Text(
+                      widget.summary.content,
+                      style: const TextStyle(color: Colors.white, fontSize: 16),
+                    ),
+                    if (widget.summary.audioPath != null) ...[
+                      const SizedBox(height: 24),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Row(
+                          children: [
+                            IconButton(
+                              icon: Icon(
+                                _isPlaying ? Icons.pause : Icons.play_arrow,
+                                color: Colors.white,
+                              ),
+                              onPressed: _togglePlayPause,
+                            ),
+                            const SizedBox(width: 8),
+                            const Text(
+                              'Áudio gravado',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 24),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: const Text(
+                          'FECHAR',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ),
@@ -607,12 +607,14 @@ class _SummaryDialogState extends State<SummaryDialog> {
   Widget _buildTextField(
     TextEditingController controller,
     String label, {
-    int maxLines = 1,
+    int? maxLines = 1,
+    int? minLines,
     IconData? icon,
   }) {
     return TextField(
       controller: controller,
       maxLines: maxLines,
+      minLines: minLines,
       style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         labelText: label,
@@ -678,7 +680,8 @@ class _SummaryDialogState extends State<SummaryDialog> {
                   _buildTextField(
                     _contentController,
                     'Conteúdo (texto)',
-                    maxLines: 5,
+                    maxLines: null,
+                    minLines: 5,
                   ),
                   const SizedBox(height: 24),
                   if (!kIsWeb) ...[

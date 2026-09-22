@@ -8,6 +8,7 @@ import 'screens/summary_page.dart';
 import 'screens/progress_page.dart';
 import 'core/app_config.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'widgets/settings_drawer.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -19,6 +20,21 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
   final PageController _pageController = PageController();
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  double _iconOpacity = 1.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController.addListener(() {
+      if (!_pageController.hasClients) return;
+      final page = _pageController.page ?? 0.0;
+      final distance = (page - page.round()).abs();
+      setState(() {
+        _iconOpacity = (1.0 - (distance * 4)).clamp(0.0, 1.0);
+      });
+    });
+  }
 
   final List<Widget> _pages = [
     const TasksPage(),
@@ -126,17 +142,38 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
         Scaffold(
+          key: _scaffoldKey,
           backgroundColor: Colors.transparent,
           extendBody: false,
-          body: PageView(
-            controller: _pageController,
-            onPageChanged: (index) {
-              setState(() {
-                _currentIndex = index;
-              });
-            },
-            physics: const PageScrollPhysics(),
-            children: _pages,
+          drawer: const SettingsDrawer(),
+          body: Stack(
+            children: [
+              PageView(
+                controller: _pageController,
+                onPageChanged: (index) {
+                  setState(() {
+                    _currentIndex = index;
+                  });
+                },
+                physics: const PageScrollPhysics(),
+                children: _pages,
+              ),
+              Positioned(
+                top: MediaQuery.of(context).padding.top + 6,
+                left: 12,
+                child: Opacity(
+                  opacity: _iconOpacity,
+                  child: IconButton(
+                    icon: Image.asset(
+                      'assets/icon/Icon_fill.png',
+                      width: 28,
+                      height: 28,
+                    ),
+                    onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+                  ),
+                ),
+              ),
+            ],
           ),
           bottomNavigationBar: SafeArea(
             child: Container(
@@ -152,7 +189,7 @@ class _HomePageState extends State<HomePage> {
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.15),
-                    blurRadius: 20,
+                    blurRadius: 36,
                     offset: const Offset(0, 10),
                   ),
                 ],

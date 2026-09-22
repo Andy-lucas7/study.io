@@ -65,14 +65,7 @@ class PomodoroPage extends StatelessWidget {
         title: Text('Timer Pomodoro', style: AppConfig().montserratTitle),
         backgroundColor: Colors.transparent,
         centerTitle: true,
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: Image.asset('assets/icon/Icon_fill.png'),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
-        ),
       ),
-      drawer: const SettingsDrawer(),
       body: Padding(
         padding: const EdgeInsets.all(22.0),
         child: Column(

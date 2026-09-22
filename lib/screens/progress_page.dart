@@ -152,14 +152,7 @@ class _ProgressPageState extends State<ProgressPage> {
         title: Text('Progresso', style: AppConfig().montserratTitle),
         backgroundColor: Colors.transparent,
         centerTitle: true,
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: Image.asset('assets/icon/Icon_fill.png'),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
-        ),
       ),
-      drawer: const SettingsDrawer(),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(8),
         child: Column(
@@ -194,9 +187,13 @@ class _ProgressPageState extends State<ProgressPage> {
 
             const SizedBox(height: 30),
 
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
+            GridView.count(
+              crossAxisCount: 2,
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 8,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              childAspectRatio: 1.1,
               children: [
                 _statCard(
                   'Tarefas',

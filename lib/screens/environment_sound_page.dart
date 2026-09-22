@@ -112,14 +112,7 @@ class EnvironmentSoundPage extends StatelessWidget {
           'Som Ambiente',
           style: AppConfig().montserratTitle.copyWith(),
         ),
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: Image.asset('assets/icon/Icon_fill.png'),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
-        ),
       ),
-      drawer: const SettingsDrawer(),
       body: Padding(
         padding: const EdgeInsets.all(8),
         child: GridView.count(

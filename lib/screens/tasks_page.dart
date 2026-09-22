@@ -725,30 +725,8 @@ class _TasksPageState extends State<TasksPage>
         centerTitle: true,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: Image.asset('assets/icon/Icon_fill.png'),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
-        ),
-        actions: [
-          AnimatedBuilder(
-            animation: _listAnimationController,
-            builder: (context, child) {
-              return Transform.rotate(
-                angle: _listAnimationController.value * 2 * 3.14159,
-                child: IconButton(
-                  icon: const Icon(Icons.refresh),
-                  onPressed: () => _loadTasks(forceReload: true),
-                  tooltip: 'Atualizar',
-                ),
-              );
-            },
-          ),
-        ],
         backgroundColor: Colors.transparent,
       ),
-      drawer: const SettingsDrawer(),
       body: RefreshIndicator(
         onRefresh: () => _loadTasks(forceReload: true),
         color: currentTheme.colorScheme.primary,
